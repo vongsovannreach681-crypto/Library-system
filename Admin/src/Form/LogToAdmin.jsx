@@ -12,7 +12,7 @@ const LogToAdmin = () => {
     const token = localStorage.getItem("auth_token");
     const user = JSON.parse(localStorage.getItem("auth_user") || "null");
     if (token && user && user.role === "admin") {
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -31,9 +31,10 @@ const LogToAdmin = () => {
 
       localStorage.setItem("auth_token", token);
       localStorage.setItem("auth_user", JSON.stringify(user));
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
-      const message = err?.response?.data?.message || "Login failed. Please try again.";
+      const message =
+        err?.response?.data?.message || "Login failed. Please try again.";
       setError(message);
     }
   };
@@ -53,8 +54,9 @@ const LogToAdmin = () => {
               ស្វាគមន៍មកកាន់ LibreShelf
             </h2>
             <p className="text-blue-100 text-sm leading-relaxed font-primary">
-              សូមចូលគណនីរបស់អ្នកដើម្បីចូលប្រើផ្ទាំងគ្រប់គ្រងសៀវភៅ
-              ក្នុងប្រព័ន្ធ LibreShelf។ ប្រសិនបើអ្នកមិនមានគណនីទេ សូមទំនាក់ទំនងអ្នកគ្រប់គ្រងសម្រាប់ការចូលប្រើ។
+              សូមចូលគណនីរបស់អ្នកដើម្បីចូលប្រើផ្ទាំងគ្រប់គ្រងសៀវភៅ ក្នុងប្រព័ន្ធ
+              LibreShelf។ ប្រសិនបើអ្នកមិនមានគណនីទេ
+              សូមទំនាក់ទំនងអ្នកគ្រប់គ្រងសម្រាប់ការចូលប្រើ។
             </p>
           </div>
           <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-accent rounded-full opacity-20 blur-2xl" />
@@ -103,7 +105,7 @@ const LogToAdmin = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full text-black pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm"
+                  className="w-full text-white pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm"
                 />
               </div>
             </div>

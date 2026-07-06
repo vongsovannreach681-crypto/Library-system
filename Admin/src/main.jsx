@@ -9,10 +9,15 @@ import ManageBookPage from "./pages/ManageBookPage.jsx";
 import ManageCategory from "./pages/ManageCategory.jsx";
 import LogToAdmin from "./Form/LogToAdmin.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ManageUser from "./pages/ManageUser.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <LogToAdmin />,
+  },
+  {
+    path: "/dashboard",
     element: (
       <ProtectedRoute>
         <App />
@@ -32,6 +37,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ManageCategory />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/user",
+    element: (
+      <ProtectedRoute>
+        <ManageUser/>
       </ProtectedRoute>
     ),
   },

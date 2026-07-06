@@ -1,12 +1,12 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-
+import logo from '../assets/NobgLogo.png'
 const menuItems = [
   { to: "/", label: "ទិន្ន័យបណ្នាល័យ", icon: "fa-chart-bar" },
   { to: "/manageBook", label: "គ្រប់គ្រងសៀវភៅ", icon: "fa-book" },
   { to: "/categories", label: "គ្រប់គ្រងប្រភេទសៀវភៅ", icon: "fa-file" },
   { to: "/requests", label: "ការស្នើសុំ", icon: "fa-chart-bar" },
-  { to: "/users", label: "គ្រប់គ្រងអ្នកប្រើ", icon: "fa-user" },
+  { to: "/user", label: "គ្រប់គ្រងអ្នកប្រើ", icon: "fa-user" },
   { to: "/settings", label: "គ្រប់គ្រង", icon: "fa-cog" },
 ];
 
@@ -15,7 +15,7 @@ const SideBar = () => {
     <aside className="fixed left-0 top-0 h-screen w-[300px] bg-primary align-middle">
       <div className="m-auto flex justify-center">
         <img
-          src="https://libre-shelf-final-project-dun.vercel.app/img/white-logo.png"
+          src={logo}
           alt="Logo"
           className="h-[150px] w-[150px]"
         />

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BooksController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -14,11 +15,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/get-all-books', [BooksController::class, 'index']);
-
+Route::get('/get-book/{id}', [BooksController::class, 'show']);
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // admin features for books
     Route::post('/add-book', [BooksController::class, 'store']);
-    Route::get('/get-book/{id}', [BooksController::class, 'show']);
     Route::put('/update-book/{id}', [BooksController::class, 'update']);
     Route::delete('/delete-book/{id}', [BooksController::class, 'destroy']);
 
@@ -28,6 +28,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/get-one-category/{id}', [CategoryController::class, 'show']);
     Route::put('/update-category/{id}', [CategoryController::class, 'update']);
     Route::delete('/delete-category/{id}', [CategoryController::class, 'destroy']);
-});
+
+    // Control on user
+
+    
+    Route::get('/get-all-users', [UserController::class, 'index']);
+    Route::delete('/delete-user/{id}', [UserController::class, 'delete']);
+    });
 
 
