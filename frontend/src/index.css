@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
+@import "tailwindcss";
+@theme {
+  --color-primary: #112d4e;
+  --color-secondary: #3f72af;
+  --color-accent: #ffc147;
+  --color-pure-white: #ffffff;
+  --color-text-black: #222222; /* for heading*/
+  --color-dark-gray: #6b7280; /* for text inside input text like email box. */
+  --color-light-gray: #d1d5db; /* for divide line, hr */
+  --color-background: #f9f7f7;
+}
+@theme {
+  --font-primary: "Kantumruy Pro", sans-serif;
+
+}
