@@ -1,5 +1,5 @@
 {
-  "name": "user",
+  "name": "frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "axios": "^1.18.1",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
