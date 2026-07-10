@@ -14,6 +14,12 @@ use App\Http\Controllers\UserController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/user/{id}', [AuthController::class, 'updateProfile']);
+});
+
 Route::get('/get-all-books', [BooksController::class, 'index']);
 Route::get('/get-book/{id}', [BooksController::class, 'show']);
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {

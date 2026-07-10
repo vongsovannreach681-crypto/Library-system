@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/api";
 import { useRef } from "react";
+import { Link } from "react-router-dom";
+import LoadingState from "../card/LoadingState";
 const NewRelease = () => {
   const [book, setBook] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,6 @@ const NewRelease = () => {
       try {
         const response = await api.get("get-all-books");
         setBook(response.data);
-        console.log(response);
       } catch (err) {
         console.error("Message : ", err);
       } finally {
@@ -21,7 +22,17 @@ const NewRelease = () => {
     getAllBooks();
   }, []);
   if (loading) {
-    return <h1>Loading Book</h1>;
+    return (
+      <>
+        <div className="w-80 mt-10">
+          <h1 className="font-primary text-3xl mx-5  text-primary font-semibold">
+            សៀវភៅដែលពេញនិយម
+          </h1>
+          <hr className="mx-4 my-2 h-1 bg-primary" />
+        </div>
+        <LoadingState />
+      </>
+    );
   }
   return (
     <>
@@ -43,16 +54,20 @@ const NewRelease = () => {
       >
         <div className="flex gap-5 mt-3">
           {book.map((item) => (
-            <div key={item.id} className="flex flex-col gap-5 items-center">
+            <Link
+              to={`/bookDetail/${item.id}`}
+              key={item.id}
+              className="flex flex-col gap-5 items-center"
+            >
               <img
-                className="w-35 rounded ml-5"
+                className="w-35 h-45 rounded ml-5"
                 src={item.cover_image}
                 alt={item.title}
               />
               <p className=" font-primary text-primary font-medium text-center">
                 {item.title}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       </marquee>

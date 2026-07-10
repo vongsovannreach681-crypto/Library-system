@@ -1,0 +1,219 @@
+<div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 pt-24 pb-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header Background */}
+          <div className="h-32 bg-gradient-to-r from-primary to-secondary relative"></div>
+
+          {/* Profile Content */}
+          <div className="px-6 md:px-8 pb-8">
+            {/* Profile Picture and Name */}
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-16 mb-8">
+              <div className="relative">
+                <img
+                  src={
+                    profilePreview ||
+                    (user.profile
+                      ? `http://localhost:8000/storage/${user.profile}`
+                      : "https://via.placeholder.com/150")
+                  }
+                  alt={user.name}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg"
+                />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-3xl font-extrabold text-primary font-primary dark:text-white mb-2">
+                  {user.name}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 font-primary">
+                  <i className="ph-bold ph-briefcase mr-2 text-accent"></i>
+                  {user.role === "admin"
+                    ? "គ្រប់គ្រងប្រព័ន្ធ"
+                    : "អ្នកប្រើប្រាស់"}
+                </p>
+              </div>
+            </div>
+
+            {/* Success/Error Messages */}
+            {success && (
+              <div className="p-4 rounded-lg bg-green-50 text-green-600 text-sm font-medium flex items-center gap-2 mb-6">
+                <i className="ph-bold ph-check-circle text-lg" />
+                <span>{success}</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 rounded-lg bg-red-50 text-red-600 text-sm font-medium flex items-center gap-2 mb-6">
+                <i className="ph-bold ph-warning-circle text-lg" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Profile Info */}
+            {!isEditing ? (
+              <div className="space-y-4 mb-8">
+                <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
+                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+                    <i className="ph-bold ph-envelope mr-2 text-accent"></i>
+                    អ៊ីមែល
+                  </p>
+                  <p className="text-lg text-gray-800 dark:text-white font-semibold">
+                    {user.email}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
+                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+                    <i className="ph-bold ph-phone mr-2 text-accent"></i>
+                    លេខទូរស័ព្ទ
+                  </p>
+                  <p className="text-lg text-gray-800 dark:text-white font-semibold">
+                    {user.phone}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg">
+                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+                    <i className="ph-bold ph-calendar mr-2 text-accent"></i>
+                    ចូលរួមនៅ
+                  </p>
+                  <p className="text-lg text-gray-800 dark:text-white font-semibold">
+                    {new Date(user.created_at).toLocaleDateString("km-KH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Edit Form
+              <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+                {/* Name Field */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="ph-bold ph-user mr-2 text-accent"></i>ឈ្មោះ
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                  />
+                </div>
+
+                {/* Email Field */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="ph-bold ph-envelope mr-2 text-accent"></i>
+                    អ៊ីមែល
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                  />
+                </div>
+
+                {/* Phone Field */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="ph-bold ph-phone mr-2 text-accent"></i>
+                    លេខទូរស័ព្ទ
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                  />
+                </div>
+
+                {/* Profile Picture Upload */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="ph-bold ph-image mr-2 text-accent"></i>
+                    រូបថតទម្រង់
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {profilePreview && (
+                      <img
+                        src={profilePreview}
+                        alt="Preview"
+                        className="w-16 h-16 rounded-lg object-cover border-2 border-accent"
+                      />
+                    )}
+                    <label className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors">
+                      <i className="ph-bold ph-upload text-accent text-lg" />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {profile ? "ផ្លាស់ប្តូរ" : "ជ្រើសរើស"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-primary hover:bg-secondary text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <i className="ph-bold ph-check text-lg" />
+                    <span className="font-primary">
+                      {loading ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setProfile(null);
+                      setProfilePreview(null);
+                      setFormData({
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone,
+                      });
+                    }}
+                    className="flex-1 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <i className="ph-bold ph-x text-lg" />
+                    <span className="font-primary">បោះបង់</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex-1 bg-primary hover:bg-secondary text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <i className="ph-bold ph-pencil text-lg" />
+                  <span className="font-primary">កែសម្រួល</span>
+                </button>
+              )}
+              <button
+                onClick={handleLogout}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2"
+              >
+                <i className="ph-bold ph-sign-out text-lg" />
+                <span className="font-primary">ចាកចេញ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

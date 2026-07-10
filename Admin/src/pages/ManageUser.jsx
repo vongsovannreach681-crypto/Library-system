@@ -11,7 +11,7 @@ const ManageUser = () => {
     const getAllUser = async () => {
       try {
         const respone = await api.get("get-all-users");
-        SetUser(respone.data);
+        SetUser(respone.data.filter((user) => user.id >= 3));
         console.log(respone);
       } catch (ex) {
         console.error(ex);
@@ -80,7 +80,8 @@ const ManageUser = () => {
                 </thead>
 
                 <tbody className="text-sm text-gray-700 font-primary">
-                  {user.map((user, index) => (
+                  {user.filter((user) => user.id >= 2)
+                  .map((user, index) => (
                     <tr
                       key={user.id}
                       className={`border-b border-gray-100 transition duration-200 hover:bg-blue-50 ${
