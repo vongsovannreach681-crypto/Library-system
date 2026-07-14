@@ -13,9 +13,18 @@ class BooksController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $books = Books::with('category')->get()->map(function ($book) {
+        $query = Books::with('category')->latest();
+
+        if ($request->filled('limit')) {
+            $limit = (int) $request->query('limit');
+            if ($limit > 0) {
+                $query->limit($limit);
+            }
+        }
+
+        $books = $query->get()->map(function ($book) {
             return $this->formatBookResponse($book);
         });
 

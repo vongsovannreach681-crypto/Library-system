@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BooksController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\UserController;
 
 // Route::get('/user', function (Request $request) {
@@ -18,6 +19,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/user/{id}', [AuthController::class, 'updateProfile']);
+
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::get('/favorites/{bookId}/status', [FavoriteController::class, 'status']);
+    Route::post('/favorites/{bookId}', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{bookId}', [FavoriteController::class, 'destroy']);
 });
 
 Route::get('/get-all-books', [BooksController::class, 'index']);
@@ -40,6 +46,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     
     Route::get('/get-all-users', [UserController::class, 'index']);
     Route::delete('/delete-user/{id}', [UserController::class, 'delete']);
+    Route::put('/update-user/{id}', [UserController::class, 'updateProfile']);
     });
-
 
