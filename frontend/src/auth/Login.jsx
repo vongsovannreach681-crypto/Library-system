@@ -125,7 +125,7 @@ const Login = () => {
                 មិនមានគណនីទេ?{" "}
                 <Link
                   to="/register"
-                  className="text-primary hover:text-secondary font-semibold transition-colors"
+                  className="text-accent hover:text-secondary font-semibold transition-colors"
                 >
                   បង្កើតគណនីនៅទីនេះ
                 </Link>

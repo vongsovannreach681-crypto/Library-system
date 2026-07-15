@@ -10,14 +10,13 @@ import ManageCategory from "./pages/ManageCategory.jsx";
 import LogToAdmin from "./Form/LogToAdmin.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ManageUser from "./pages/ManageUser.jsx";
+import Login from "../../frontend/src/auth/Login.jsx";
+import AdminPanel from "./pages/AdminPanel.jsx";
 
 const router = createBrowserRouter([
+
   {
-    path: "/",
-    element: <LogToAdmin />,
-  },
-  {
-    path: "/dashboard",
+    path: "/login",
     element: (
       <ProtectedRoute>
         <App />
@@ -45,6 +44,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ManageUser/>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/adminPanel",
+    element: (
+      <ProtectedRoute>
+        <AdminPanel/>
       </ProtectedRoute>
     ),
   },

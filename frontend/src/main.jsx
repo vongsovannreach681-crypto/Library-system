@@ -1,5 +1,3 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
 import "./index.css";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -10,6 +8,7 @@ import LibraryPage from "./pages/LibraryPage";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
 import UserProfile from "./pages/UserProfile";
+import FavoritesPage from "./pages/FavoritesPage";
 
 const router = createBrowserRouter([
   {
@@ -39,6 +38,10 @@ const router = createBrowserRouter([
   {
     path: "/profile",
     element: <UserProfile />,
+  },
+  {
+    path: "/favorites",
+    element: <FavoritesPage />,
   },
 ]);
 

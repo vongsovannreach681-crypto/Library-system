@@ -32,6 +32,41 @@ class BooksController extends Controller
     }
 
     /**
+     * Search books by title, author, or category name.
+     */
+    public function search(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'query' => 'required|string|min:1',
+            'limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $search = $request->query('query');
+        $limit = (int) $request->query('limit', 10);
+
+        $books = Books::with('category')
+            ->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('author', 'like', "%{$search}%")
+                  ->orWhereHas('category', function ($cat) use ($search) {
+                      $cat->where('name', 'like', "%{$search}%");
+                  });
+            })
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(function ($book) {
+                return $this->formatBookResponse($book);
+            });
+
+        return response()->json($books, 200);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -79,6 +114,7 @@ class BooksController extends Controller
 
         return response()->json($this->formatBookResponse($book), 200);
     }
+   
 
     /**
      * Update the specified resource in storage.
@@ -120,6 +156,7 @@ class BooksController extends Controller
         $book->update($data);
         return response()->json($this->formatBookResponse($book), 200);
     }
+    
 
     /**
      * Remove the specified resource from storage.
@@ -177,4 +214,5 @@ class BooksController extends Controller
             'updated_at' => $book->updated_at,
         ];
     }
+     
 }

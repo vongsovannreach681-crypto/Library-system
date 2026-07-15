@@ -1,67 +1,128 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/api";
 import Header from "../components/Header";
-import book from "../assets/Book/Static1.PNG";
-import { Link, useParams } from "react-router-dom";
+import defaultBookCover from "../assets/Book/Static1.PNG";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 const DetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [book, setBook] = useState([]);
+  const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
-    const BookDetail = async () => {
+    const loadBook = async () => {
       try {
         const res = await api.get(`/get-book/${id}`);
         setBook(res.data);
       } catch (ex) {
         console.error("Message : ", ex);
+        setError(true);
       } finally {
         setLoading(false);
       }
+
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        setIsFavorite(false);
+        return;
+      }
+
+      try {
+        const favoritesRes = await api.get("/favorites");
+        const favorites = favoritesRes.data?.favorites || [];
+        setIsFavorite(favorites.some((item) => String(item.id) === String(id)));
+      } catch (ex) {
+        console.error("Favorite lookup error:", ex);
+        setIsFavorite(false);
+      }
     };
-    BookDetail();
-  });
+
+    loadBook();
+  }, [id]);
+
+  const handleFavoriteToggle = async () => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setFavoriteLoading(true);
+    try {
+      if (!isFavorite) {
+        await api.post(`/favorites/${id}`);
+        setIsFavorite(true);
+      }
+      window.dispatchEvent(new Event("favorites-updated"));
+    } catch (ex) {
+      console.error("Favorite error:", ex);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-primary text-primary text-lg">
+          Loading book details...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !book) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="font-primary text-red-600 text-lg">
+          Failed to load book details.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="fixed top-0 left-0 z-3 right-0 mb-3">
         <Header />
       </div>
       <main className="min-h-screen pb-16 mt-5">
-        {/* main contain */}
         <section className="bg-primary pt-28 pb-16 relative shadow-lg">
-          {/* Back Button (Absolute) */}
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-            <Link to={"/library"}
-              onclick="history.back()"
+            <Link
+              to="/library"
+              onClick={() => window.history.back()}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
             >
               <i className="ph-bold ph-arrow-left text-xl" />
             </Link>
           </div>
+
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">
-              {/* Left: Book Cover */}
               <div className="flex-shrink-0 w-[200px] md:w-[260px] aspect-[2/3] rounded-lg overflow-hidden shadow-2xl border-4 border-white/10">
                 <img
                   id="book-cover"
-                  src={book.cover_image}
+                  src={book.cover_image || defaultBookCover}
                   alt="Book Cover"
                   className="w-full h-full object-cover bg-gray-700"
                 />
               </div>
-              {/* Right: Info */}
+
               <div className="flex-1 text-center md:text-left text-white">
-                {/* Author */}
                 <p
                   id="book-author"
                   className="text-gray-300 text-2xl font-medium mb-2 font-primary"
                 >
-                  និពន្ធដោយលោក​ : {book.author}
+                  និពន្ធដោយលោក : {book.author}
                 </p>
-                {/* Title */}
+
                 <h1
                   id="book-title"
                   className="text-3xl md:text-5xl font-primary font-extrabold mb-4 leading-tight"
@@ -78,20 +139,18 @@ const DetailPage = () => {
                     ? new Date(book.release_date).getFullYear()
                     : "N/A"}
                 </p>
+
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-6">
-                  {/* Rating */}
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
                     <i className="ph-fill ph-star text-accent" />
                     <span className="font-bold">{book.star_rating}</span>
                   </div>
-                  {/* Read Time (Mock) */}
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
                     <i className="ph-bold ph-clock" />
                     <span className="text-sm font-primary">
-                      រយះពេលអាន : {book.Time_spent} ម៉ោង{" "}
+                      រយះពេលអាន : {book.Time_spent} ម៉ោង
                     </span>
                   </div>
-                  {/* NEW: Page Count Badge */}
                   <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
                     <i className="ph-bold ph-files" />
                     <span id="page-count" className="text-sm font-primary">
@@ -99,39 +158,44 @@ const DetailPage = () => {
                     </span>
                   </div>
                 </div>
-                {/* Categories (Pills) */}
 
-                {/* Actions */}
                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                  {/* Download PDF */}
                   <a
                     id="download-btn"
                     download={book.pdf_file}
-                    href="#"
+                    href={book.pdf_file || "#"}
                     target="_blank"
+                    rel="noreferrer"
                     className="px-6 py-3 font-primary bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center gap-2"
                   >
                     <i className="ph-bold ph-download-simple" /> ទាញយកសៀវភៅ
                   </a>
-                  {/* Favorite */}
+
                   <button
                     id="favorite-btn"
-                    className="px-4 py-3 border border-white/30 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-2"
+                    onClick={handleFavoriteToggle}
+                    disabled={favoriteLoading}
+                    className="px-4 py-3 border border-white/30 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <i className="ph-bold ph-heart text-xl" />
-                    <span className="font-primary">ទុកអានពេលក្រោយ</span>
+                    <i
+                      className={`text-xl ${isFavorite ? "ph-fill ph-heart" : "ph-bold ph-heart"}`}
+                    />
+                    <span className="font-primary">
+                      {favoriteLoading
+                        ? "កំពុងដាក់..."
+                        : isFavorite
+                          ? "ដកចេញពីចូលចិត្ត"
+                          : "ដាក់ចូលចិត្ត"}
+                    </span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </section>
-        {/* ========================== */}
-        {/* BOTTOM SECTION (Content)   */}
-        {/* ========================== */}
+
         <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Col: Synopsis (Sticky Sidebar) */}
             <aside className="lg:col-span-1">
               <div className="bg-white dark:bg-primary rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-slate-700 lg:sticky lg:top-32">
                 <h3 className="font-primary text-xl font-bold text-primary dark:text-white mb-4 flex items-center gap-2">
@@ -153,11 +217,11 @@ const DetailPage = () => {
                   >
                     {isDescriptionExpanded ? (
                       <>
-                        បង្រួម <i className="ph-bold ph-arrow-up"></i>
+                        បង្រ្កឹម <i className="ph-bold ph-arrow-up"></i>
                       </>
                     ) : (
                       <>
-                        អានលម្អិត <i className="ph-bold ph-arrow-right"></i>
+                        អានលំអិត <i className="ph-bold ph-arrow-right"></i>
                       </>
                     )}
                   </button>
@@ -165,19 +229,13 @@ const DetailPage = () => {
               </div>
             </aside>
 
-            {/* Right Col: Description & Reader */}
             <div className="lg:col-span-1 space-y-10">
-              {/* Synopsis Section */}
-            
-
-              {/* PDF Viewer Section */}
               <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-slate-700">
                 <div className="bg-gradient-to-r from-primary to-primary/90 px-6 py-4 flex justify-between items-center">
                   <h3 className="font-bold text-white flex items-center gap-3 font-primary text-lg">
                     <i className="ph-fill ph-book-open-text text-xl"></i>
                     មើលឯកសារ
                   </h3>
-                  {/* Fullscreen Toggle Button */}
                   <button
                     id="fullscreen-btn"
                     className="p-2.5 hover:bg-white/20 rounded-lg transition-all duration-200 text-white/90 hover:text-white"
@@ -187,19 +245,16 @@ const DetailPage = () => {
                   </button>
                 </div>
 
-                {/* PDF Viewer Container */}
                 <div
                   id="pdf-container"
                   className="bg-gray-50 dark:bg-slate-700 p-4 h-[600px] sm:h-[700px] lg:h-[800px] flex flex-col group"
                 >
-                  {/* IFRAME for PDF */}
                   <iframe
                     id="pdf-viewer"
                     src={book.pdf_file}
                     className="w-full flex-1 rounded-xl bg-white shadow-inner border border-gray-200 dark:border-slate-600"
                     frameBorder="0"
                   />
-                  {/* Fallback Message */}
                   <div
                     id="pdf-fallback"
                     className="hidden flex-1 flex flex-col items-center justify-center text-center bg-gray-100 dark:bg-slate-600 rounded-xl"
@@ -213,7 +268,7 @@ const DetailPage = () => {
                     </p>
                     <a
                       id="fallback-download"
-                      href="#"
+                      href={book.pdf_file || "#"}
                       className="bg-accent text-white px-6 py-2 rounded-lg hover:bg-accent/90 transition font-primary font-semibold"
                     >
                       ទាញយកឯកសារ
@@ -221,7 +276,6 @@ const DetailPage = () => {
                   </div>
                 </div>
 
-                {/* PDF Footer Info */}
                 <div className="bg-gray-50 dark:bg-slate-700 px-6 py-4 border-t border-gray-200 dark:border-slate-600 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-sm font-primary">
                     <i className="ph-fill ph-file-pdf text-lg text-red-500"></i>

@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/get-all-books', [BooksController::class, 'index']);
+Route::get('/search-books', [BooksController::class, 'search']);
 Route::get('/get-book/{id}', [BooksController::class, 'show']);
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // admin features for books
@@ -43,9 +44,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Control on user
 
-    
     Route::get('/get-all-users', [UserController::class, 'index']);
     Route::delete('/delete-user/{id}', [UserController::class, 'delete']);
     Route::put('/update-user/{id}', [UserController::class, 'updateProfile']);
-    });
-
+});

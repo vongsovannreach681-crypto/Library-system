@@ -12,7 +12,7 @@ const LogToAdmin = () => {
     const token = localStorage.getItem("auth_token");
     const user = JSON.parse(localStorage.getItem("auth_user") || "null");
     if (token && user && user.role === "admin") {
-      navigate("/dashboard", { replace: true });
+      navigate("/adminPanel", { replace: true });
     }
   }, [navigate]);
 
