@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
 
 const navLinks = [
-  { label: "ប្លុកវេតីការ", href: "/" },
+  { label: "ប្លុកវេទីការ", href: "/" },
   { label: "បណ្ណាល័យ", href: "/library" },
   { label: "មេរៀន", href: "/" },
   { label: "អំពីយើង", href: "" },
@@ -54,7 +54,9 @@ const Header = () => {
 
     setIsDarkMode(shouldUseDark);
     document.documentElement.classList.toggle("dark", shouldUseDark);
-    document.documentElement.style.colorScheme = shouldUseDark ? "dark" : "light";
+    document.documentElement.style.colorScheme = shouldUseDark
+      ? "dark"
+      : "light";
 
     const token = localStorage.getItem("auth_token");
     const userData = localStorage.getItem("user");

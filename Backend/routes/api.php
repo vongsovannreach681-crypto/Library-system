@@ -7,6 +7,10 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\FollowsController;
+use App\Http\Controllers\LikesController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -24,6 +28,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites/{bookId}/status', [FavoriteController::class, 'status']);
     Route::post('/favorites/{bookId}', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{bookId}', [FavoriteController::class, 'destroy']);
+
+    Route::get('/get-comments', [CommentController::class, 'index']);
+    Route::post('/post-comments', [CommentController::class, 'store']);
+    Route::delete('/delete-comments/{id}', [CommentController::class, 'destroy']);
+
+    // user handling on post
+
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::post('/posts', [PostController::class, 'store']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
+    Route::put('/posts/{id}', [PostController::class, 'update']);
+    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+
+
+    // Follow
+    Route::post('/users/{id}/follow',    [FollowsController::class, 'toggle']);
+    Route::get('/users/{id}/followers',  [FollowsController::class, 'followers']);
+    Route::get('/users/{id}/following',  [FollowsController::class, 'following']);
+ 
+    // Likes
+    Route::post('/posts/{id}/like',  [LikesController::class, 'toggle']);
+    Route::get('/posts/{id}/likes',  [LikesController::class, 'index']);
 });
 
 Route::get('/get-all-books', [BooksController::class, 'index']);

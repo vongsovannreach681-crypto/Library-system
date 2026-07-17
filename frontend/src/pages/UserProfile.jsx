@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import Header from "../components/Header";
+import FavoritesPage from "./FavoritesPage";
+import PostHistory from "./PostHistory";
 
 const UserProfile = () => {
   const navigate = useNavigate();

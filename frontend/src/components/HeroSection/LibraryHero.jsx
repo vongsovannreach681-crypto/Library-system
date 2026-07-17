@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/api";
 import book1 from "../../assets/Book/Static1.PNG";
 import book2 from "../../assets/Book/Static2.jpg";
 import book3 from "../../assets/Book/Static3.jpg";
@@ -15,12 +15,6 @@ const LibraryHero = () => {
   const navigate = useNavigate();
   const wrapperRef = useRef(null);
   const debounceRef = useRef(null);
-
-  // If your frontend (Vite) and backend (Laravel) run on different ports,
-  // axios needs the full backend URL — a relative "/api/..." path would
-  // otherwise hit the Vite dev server instead and silently fail/404.
-  // Set VITE_API_URL in your .env, e.g. VITE_API_URL=http://localhost:8000
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   // Close dropdown when clicking outside the search box
   useEffect(() => {
@@ -46,7 +40,7 @@ const LibraryHero = () => {
       setLoading(true);
       setSearchError(null);
       try {
-        const res = await axios.get(`${API_BASE}/api/search-books`, {
+        const res = await api.get("/search-books", {
           params: { query: searchQuery.trim(), limit: 6 },
         });
 

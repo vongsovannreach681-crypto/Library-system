@@ -10,18 +10,16 @@ const CustomerReview = () => {
           </h2>
           <hr className="my-2 w-55 h-1 border-0 bg-primary dark:bg-accent" />
         </div>
-        <section className="flex flex-wrap gap-20">
-          <div className="text-center w-[25%]">
+        <section className="grid grid-cols-1  sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-2">
+          <div className="text-center ">
             <img className="w-[350px] rounded" src={me} alt="" />
-            <h3 className="font-primary pt-5 font-semibold text-2xl text-primary dark:text-white ">
-              និស្សិត វង សុវណ្ណរាជ
-            </h3>
+           
           </div>
-          <div className=" w-[50%]">
-            <h3 className="text-primary font-primary text-3xl font-semibold dark:text-white">
+          <div className=" pt-3 sm:pt-5 md:pt-1 xl:pt-1 ">
+            <h3 className="text-primary font-primary text-2xl sm:text-2xl md:text-3xl xl:text-3xl  font-semibold dark:text-white">
               ស្វាគមន៍មកកាន់បណ្ណាល័យសៀវភៅ
             </h3>
-            <p className="text-primary pt-3 font-primary text-xl dark:text-gray-100">
+            <p className="text-primary pt-3 sm:pt-5 md:pt-5 xl-pt4 font-primary text-xl dark:text-gray-100">
               <span className="pl-2"></span> សួស្តី!ខ្ញុំឈ្មោះ វង សុវណ្ណរាជ ជាស្ថាបនិក
               និងជាអ្នកអភិវឌ្ឍន៍គេហទំព័រនេះឡើង។
               ក្នុងនាមជានិស្សិតផ្នែកបច្ចេកវិទ្យា

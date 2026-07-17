@@ -49,7 +49,16 @@ const FavoritesPage = () => {
     }
   };
 
-  const handleDownload = (book) => {
+  // Prevent the card's <Link> navigation from firing when the heart icon is clicked
+  const handleFavoriteClick = (event, book) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handleRemove(book.id);
+  };
+
+  const handleDownload = (event, book) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (!book?.pdf_file) return;
     window.open(book.pdf_file, "_blank", "noreferrer");
   };
@@ -67,215 +76,137 @@ const FavoritesPage = () => {
     } else if (sortMode === "author") {
       sorted.sort((a, b) => (a.author || "").localeCompare(b.author || ""));
     } else {
-      sorted.sort((a, b) => (new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0)));
+      sorted.sort(
+        (a, b) =>
+          new Date(b.created_at || b.updated_at || 0) -
+          new Date(a.created_at || a.updated_at || 0)
+      );
     }
 
     return sorted;
   }, [favorites, query, sortMode]);
 
   const totalFavorites = favorites.length;
-  const activeBook = filteredFavorites[0] || favorites[0];
 
   if (loading) {
     return (
       <>
-        <Header />
-        <LoadingState />
+        
       </>
     );
   }
 
   return (
     <>
-      <Header />
+      
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 bg-gray-50 dark:bg-slate-900 rounded-xl">
+          <h1 className="font-primary text-primary  dark:text-white font-semibold text-2xl">សៀវភៅដែលអ្នកចូលចិត្ត </h1>
+          <hr className="w-50 h-1 bg-accent " />
+        <div className="mb-6 flex flex-col gap-4 mt-5 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="font-primary text-2xl font-bold text-primary dark:text-white">
+            ចំនួន ({totalFavorites})
+          </h1>
 
-      <main className="min-h-screen bg-[linear-gradient(180deg,_#ffffff_0%,_#f5f7fb_100%)] pt-6 dark:bg-[linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
-        <section className="mx-auto max-w-[1440px] px-4 pb-12 sm:px-6 lg:px-8">
-          <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-            <div className="relative overflow-hidden rounded-[2rem] bg-[#18385f] p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.22)] dark:bg-[#0f2644] sm:p-8 lg:min-h-[760px]">
-              <div className="absolute inset-0 opacity-35">
-                <div className="absolute left-0 top-0 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute bottom-10 right-10 h-72 w-72 rounded-full bg-[#5a67d8]/20 blur-3xl" />
-              </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ស្វែងរកក្នុងបញ្ជីចូលចិត្ត"
+              className="font-primary rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value)}
+              className="font-primary rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="recent">ថ្មីៗបំផុត</option>
+              <option value="title">តាមចំណងជើង</option>
+              <option value="author">តាមអ្នកនិពន្ធ</option>
+            </select>
+          </div>
+        </div>
 
-              <div className="relative z-10 flex h-full flex-col">
-                <div className="max-w-2xl">
-                  <p className="font-primary text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
-                    សៀវភៅចូលចិត្ត
-                  </p>
-                  <h1 className="mt-5 max-w-xl font-primary text-4xl font-extrabold leading-tight sm:text-5xl xl:text-6xl">
-                    ចូលទៅបណ្ណាល័យផ្ទាល់ខ្លួនរបស់អ្នក
-                  </h1>
-                  <p className="mt-6 max-w-xl font-primary text-base leading-8 text-white/80">
-                    រក្សាទុកសៀវភៅដែលអ្នកចង់អាន និងត្រឡប់មកពេលណាក៏បានដោយរូបរាងស្អាត និងងាយមើល។
-                  </p>
-                </div>
+        {error && (
+          <p className="font-primary mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-500 dark:bg-red-900/20">
+            {error}
+          </p>
+        )}
 
-                <div className="mt-8 max-w-xl">
-                  <label className="sr-only" htmlFor="favorite-search">
-                    Search favorites
-                  </label>
-                  <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-lg">
-                    <i className="ph-bold ph-magnifying-glass text-slate-400" />
-                    <input
-                      id="favorite-search"
-                      type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search by title, author, or tag."
-                      className="w-full bg-transparent font-primary text-sm text-slate-700 outline-none placeholder:text-slate-400"
-                    />
-                  </div>
-                </div>
+        {!error && filteredFavorites.length === 0 && (
+          <div className="font-primary rounded-2xl border border-dashed border-gray-200 py-16 text-center text-dark-gray dark:border-slate-700 dark:text-slate-400">
+            {totalFavorites === 0
+              ? "អ្នកមិនទាន់មានសៀវភៅចូលចិត្តនៅឡើយទេ។"
+              : "រកមិនឃើញសៀវភៅដែលត្រូវនឹងការស្វែងរករបស់អ្នកទេ។"}
+          </div>
+        )}
 
-                <p className="mt-6 max-w-xl font-primary text-sm leading-7 text-white/70">
-                  បន្តអានពីចំណុចដែលអ្នកចូលចិត្តបំផុត។ រក្សាទុក, ស្វែងរក, និងគ្រប់គ្រងសៀវភៅបានងាយស្រួល។
-                </p>
-
-                <div className="mt-auto flex items-end justify-between gap-4 pt-12">
-                  <p className="max-w-sm font-primary text-xs italic text-white/45">
-                    Today a reader, tomorrow a leader.
-                  </p>
-
-                  {activeBook && (
-                    <div className="hidden items-end gap-4 md:flex">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {filteredFavorites.map((book) => (
+            <Link
+              key={book.id}
+              to={`/bookDetail/${book.id}`}
+              className="block"
+            >
+              <article className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className="w-full overflow-hidden rounded-xl sm:w-36">
+                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800">
                       <img
-                        src={activeBook.cover_image}
-                        alt={activeBook.title}
-                        className="h-48 w-36 rounded-2xl object-cover shadow-2xl ring-1 ring-white/20"
+                        src={book.cover_image}
+                        alt={book.title}
+                        className="h-full w-full object-cover transition duration-500 hover:scale-105"
                       />
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
-                <div>
-                  <h2 className="font-primary text-xl font-bold text-slate-900 dark:text-white">
-                    Your Favorite Books
-                  </h2>
-                  <p className="font-primary text-sm text-slate-500 dark:text-slate-400">
-                    {totalFavorites} saved book{totalFavorites !== 1 ? "s" : ""}
-                  </p>
-                </div>
+                  <div className="flex flex-1 flex-col">
+                    <h3 className="line-clamp-1 font-primary text-xl font-bold text-primary dark:text-white sm:text-2xl">
+                      {book.title}
+                    </h3>
+                    <p className="mt-1 font-primary text-sm font-medium text-dark-gray dark:text-slate-300">
+                      {book.author}
+                    </p>
 
-                <select
-                  value={sortMode}
-                  onChange={(e) => setSortMode(e.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-primary text-sm text-slate-700 outline-none transition focus:border-[#5a67d8] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                >
-                  <option value="recent">ថ្មីបំផុត</option>
-                  <option value="title">តម្រៀបតាមឈ្មោះ</option>
-                  <option value="author">តម្រៀបតាមអ្នកនិពន្ធ</option>
-                </select>
-              </div>
+                    <div className="mt-3 flex items-center gap-1 text-sm text-accent">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <i key={i} className="ph-fill ph-star" />
+                      ))}
+                      <span className="ml-1 font-primary text-dark-gray dark:text-slate-300">
+                        ({book.star_rating ?? "N/A"})
+                      </span>
+                    </div>
 
-              <div className="max-h-[680px] overflow-y-auto">
-                {error ? (
-                  <div className="p-6">
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-5 font-primary text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-                      {error}
+                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-dark-gray font-primary dark:text-slate-400">
+                      {book.description}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4 dark:border-slate-700">
+                      <button
+                        type="button"
+                        disabled={removingId === book.id}
+                        onClick={(event) => handleFavoriteClick(event, book)}
+                        className="text-red-500 transition hover:text-red-600 disabled:opacity-50 dark:text-red-400"
+                        aria-label="ដកចេញពីបញ្ជីចូលចិត្ត"
+                      >
+                        <i className="ph-fill ph-heart text-xl" />
+                      </button>
+                      <span
+                        onClick={(event) => handleDownload(event, book)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-primary text-sm font-bold text-white transition hover:bg-secondary"
+                      >
+                        អានឥលូវនេះ <i className="ph-bold ph-book-open" />
+                      </span>
                     </div>
                   </div>
-                ) : filteredFavorites.length === 0 ? (
-                  <div className="flex h-[680px] items-center justify-center p-6 text-center">
-                    <div>
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#5a67d8]/10 text-[#5a67d8] dark:bg-white/10 dark:text-white">
-                        <i className="ph-bold ph-heart text-3xl" />
-                      </div>
-                      <h3 className="mt-4 font-primary text-xl font-bold text-slate-900 dark:text-white">
-                        មិនមានសៀវភៅចូលចិត្ត
-                      </h3>
-                      <p className="mt-2 max-w-sm font-primary text-sm leading-7 text-slate-500 dark:text-slate-400">
-                        ស្វែងរកសៀវភៅដែលអ្នកចូលចិត្តនៅក្នុងបណ្ណាល័យ ហើយបន្ថែមមកទីនេះ។
-                      </p>
-                      <Link
-                        to="/library"
-                        className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#5a67d8] px-5 py-3 font-primary text-sm font-bold text-white transition hover:bg-[#4855c7]"
-                      >
-                        ទៅបណ្ណាល័យ
-                        <i className="ph-bold ph-arrow-right" />
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {filteredFavorites.map((book) => (
-                      <div
-                        key={book.id}
-                        className="flex flex-col gap-4 px-5 py-5 transition hover:bg-slate-50 dark:hover:bg-slate-950 sm:flex-row sm:items-center sm:gap-5"
-                      >
-                        <Link
-                          to={`/bookDetail/${book.id}`}
-                          className="h-24 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
-                        >
-                          <img
-                            src={book.cover_image}
-                            alt={book.title}
-                            className="h-full w-full object-cover"
-                          />
-                        </Link>
-
-                        <div className="min-w-0 flex-1">
-                          <Link to={`/bookDetail/${book.id}`}>
-                            <h3 className="truncate font-primary text-base font-bold text-slate-900 transition hover:text-[#5a67d8] dark:text-white">
-                              {book.title}
-                            </h3>
-                          </Link>
-                          <p className="mt-1 font-primary text-sm text-slate-500 dark:text-slate-400">
-                            {book.author}
-                          </p>
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-primary text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                              <i className="ph-bold ph-tag" />
-                              {book.category_name || "General"}
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-primary text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                              <i className="ph-bold ph-calendar" />
-                              {book.release_date
-                                ? new Date(book.release_date).getFullYear()
-                                : "N/A"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                          <Link
-                            to={`/bookDetail/${book.id}`}
-                            className="inline-flex items-center gap-2 rounded-full bg-[#18385f] px-4 py-2 font-primary text-sm font-semibold text-white transition hover:bg-[#0f2644] dark:bg-slate-800 dark:hover:bg-slate-700"
-                          >
-                            អាន
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleRemove(book.id)}
-                            disabled={removingId === book.id}
-                            className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 font-primary text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/30"
-                          >
-                            {removingId === book.id ? "កំពុងលុប..." : "លុប"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDownload(book)}
-                            disabled={!book.pdf_file}
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-primary text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                          >
-                            ទាញយក
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
+                </div>
+              </article>
+            </Link>
+          ))}
+        </div>
       </main>
     </>
   );
 };
 
-export default FavoritesPage;
+export default FavoritesPage; 
