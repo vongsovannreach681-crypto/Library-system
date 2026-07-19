@@ -12,12 +12,9 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\FollowsController;
 use App\Http\Controllers\LikesController;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/posts', [PostController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -30,19 +27,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/favorites/{bookId}', [FavoriteController::class, 'destroy']);
 
     Route::get('/get-comments', [CommentController::class, 'index']);
-    Route::post('/post-comments', [CommentController::class, 'store']);
     Route::delete('/delete-comments/{id}', [CommentController::class, 'destroy']);
 
-    // user handling on post
-
-    Route::get('/posts', [PostController::class, 'index']);
-    Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/{id}', [PostController::class, 'show']);
+    
+    // CORRECTED: Unified to a clean standard endpoint name
+    Route::post('/comments', [CommentController::class, 'store']); 
+    
+    Route::post('/posts', [PostController::class, 'store']);
+    // Route::get('/posts{id}', [PostController::class, '']);
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 
-
-    // Follow
+    // Follows
     Route::post('/users/{id}/follow',    [FollowsController::class, 'toggle']);
     Route::get('/users/{id}/followers',  [FollowsController::class, 'followers']);
     Route::get('/users/{id}/following',  [FollowsController::class, 'following']);
@@ -55,21 +52,21 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/get-all-books', [BooksController::class, 'index']);
 Route::get('/search-books', [BooksController::class, 'search']);
 Route::get('/get-book/{id}', [BooksController::class, 'show']);
+
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    // admin features for books
+    // Admin features for books
     Route::post('/add-book', [BooksController::class, 'store']);
     Route::put('/update-book/{id}', [BooksController::class, 'update']);
     Route::delete('/delete-book/{id}', [BooksController::class, 'destroy']);
 
-    // api routes for categories
+    // API routes for categories
     Route::get('/get-all-categories', [CategoryController::class, 'index']);
     Route::post('/add-category', [CategoryController::class, 'store']);
     Route::get('/get-one-category/{id}', [CategoryController::class, 'show']);
     Route::put('/update-category/{id}', [CategoryController::class, 'update']);
     Route::delete('/delete-category/{id}', [CategoryController::class, 'destroy']);
 
-    // Control on user
-
+    // Admin user control
     Route::get('/get-all-users', [UserController::class, 'index']);
     Route::delete('/delete-user/{id}', [UserController::class, 'delete']);
     Route::put('/update-user/{id}', [UserController::class, 'updateProfile']);

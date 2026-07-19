@@ -16,17 +16,13 @@ class PostController extends Controller
     {
         $user = $request->user();
 
-        $followingIds = $user->following()->pluck('users.id');
-        $feedIds = $followingIds->push($user->id);
-
         $posts = Post::with(['user', 'comments.user'])
             ->withCount(['likes', 'comments'])
-            ->whereIn('user_id', $feedIds)
             ->latest()
             ->paginate(15);
 
         $posts->getCollection()->transform(function ($post) use ($user) {
-            $post->liked_by_me = $post->isLikedBy($user);
+            $post->liked_by_me = $user ? $post->isLikedBy($user) : false;
             return $post;
         });
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CommentController extends Controller
@@ -27,24 +28,47 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('Comment store entered', [
+            'has_token' => $request->bearerToken() ? true : false,
+            'auth_id' => optional($request->user('sanctum'))->id,
+            'post_id' => $request->input('post_id'),
+        ]);
+
+        $user = $request->user('sanctum');
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
         $validator = Validator::make($request->all(), [
             'comment' => 'required|string|max:1000',
             'image'   => 'nullable|string|max:2048',
-            'post_id' => 'nullable|exists:posts,id',
+            'post_id' => 'required|exists:posts,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $comment = Comment::create([
-            'comment' => $request->comment,
-            'image'   => $request->image,
-            'post_id' => $request->post_id,
-            'user_id'  => $request->user()->id,
-        ]);
+        try {
+            $comment = Comment::create([
+                'comment' => $request->comment,
+                'image'   => $request->image,
+                'post_id' => $request->post_id,
+                'user_id' => $user->id,
+            ]);
 
-        return response()->json($comment->load(['user', 'post']), 201);
+            return response()->json($comment->load(['user', 'post']), 201);
+        } catch (\Throwable $e) {
+            Log::error('Comment create failed', [
+                'message' => $e->getMessage(),
+                'user_id' => $user->id,
+                'post_id' => $request->post_id,
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to create comment',
+            ], 500);
+        }
     }
 
     /**
