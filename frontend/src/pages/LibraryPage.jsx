@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "../components/Header";
 import LibraryHero from "../components/HeroSection/LibraryHero";
+import BookSubmissionPanel from "../components/library/BookSubmissionPanel";
 import NewRelease from "../components/marqueSlide/NewRelease";
 import TrendingCard from "../components/card/TrendingCard";
 import Footer from "../components/Nav/Footer";
@@ -13,6 +14,7 @@ const LibraryPage = () => {
         <Header />
       </div>
       <LibraryHero className="" />
+      <BookSubmissionPanel />
       <NewRelease />
       <CustomerReview />
       <TrendingCard />

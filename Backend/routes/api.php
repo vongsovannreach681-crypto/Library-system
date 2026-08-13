@@ -11,10 +11,13 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\FollowsController;
 use App\Http\Controllers\LikesController;
+use App\Http\Controllers\ChatbotController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/posts', [PostController::class, 'index']);
+Route::post('/chatbot', [ChatbotController::class, 'respond']);
+Route::get('/get-all-categories', [CategoryController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -38,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route::get('/posts{id}', [PostController::class, '']);
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+    Route::post('/add-book', [BooksController::class, 'store']);
 
     // Follows
     Route::post('/users/{id}/follow',    [FollowsController::class, 'toggle']);
@@ -55,12 +59,10 @@ Route::get('/get-book/{id}', [BooksController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Admin features for books
-    Route::post('/add-book', [BooksController::class, 'store']);
     Route::put('/update-book/{id}', [BooksController::class, 'update']);
     Route::delete('/delete-book/{id}', [BooksController::class, 'destroy']);
 
     // API routes for categories
-    Route::get('/get-all-categories', [CategoryController::class, 'index']);
     Route::post('/add-category', [CategoryController::class, 'store']);
     Route::get('/get-one-category/{id}', [CategoryController::class, 'show']);
     Route::put('/update-category/{id}', [CategoryController::class, 'update']);

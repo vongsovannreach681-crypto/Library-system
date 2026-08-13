@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import BlogHero from "../../components/HeroSection/BlogHero";
+import AIChatWidget from "../../components/chat/AIChatWidget";
 
 const formatCount = (value = 0) => {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -316,7 +317,6 @@ const Blogpage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [composer, setComposer] = useState({ content: "", image: null });
   const [imagePreview, setImagePreview] = useState("");
-
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
   const resetComposer = () => {
@@ -520,47 +520,42 @@ const Blogpage = () => {
             </section>
           </div>
           
-          <aside className="hidden xl:flex sticky top-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 bg-white/60 dark:bg-[#11151f]/60 p-6 text-center shadow-xs min-h-[300px]">
-              
-            <i className="fa-solid fa-robot text-2xl text-orange-500/70 dark:text-orange-400/70 mb-2" />
-            <p className="font-primary text-xs text-slate-400 dark:text-slate-500 font-medium">កន្លែងសម្រាប់ AI Chat Bot</p>
-          </aside>
-
         </div>
       </section>
 
       <button
         type="button"
         onClick={() => setIsMobileChatOpen(true)}
-        className="xl:hidden fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-white shadow-xl hover:opacity-90 active:scale-95 transition"
-        aria-label="Open AI Chat"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0f9d58] text-white shadow-[0_18px_35px_rgba(15,157,88,0.28)] transition hover:opacity-95 active:scale-95"
+        aria-label="Open AI chat"
       >
         <i className="fa-solid fa-robot text-xl" />
       </button>
 
       {isMobileChatOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end items-center bg-black/60 dark:bg-black/70 sm:p-4 backdrop-blur-sm xl:hidden">
-          <div className="w-full max-w-xl bg-white dark:bg-[#11151f] rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-white/10 shadow-2xl transition-all max-h-[85vh] flex flex-col">
-            
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-0 backdrop-blur-sm sm:items-center sm:px-4">
+          <div className="flex h-[88vh] w-full flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-white shadow-[0_-20px_60px_rgba(0,0,0,0.35)] sm:h-[82vh] sm:max-w-2xl sm:rounded-[28px]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10 dark:bg-[#0b1020]">
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-robot text-lg text-secondary" />
-                <h3 className="font-primary text-sm font-bold text-slate-800 dark:text-white">AI Chat Bot</h3>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f9d58] text-white">
+                  <i className="fa-solid fa-robot text-xs" />
+                </span>
+                <p className="font-primary text-sm font-bold text-slate-800 dark:text-white">
+                  MAX
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMobileChatOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white hover:bg-slate-200 transition"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-white/10 dark:text-white"
+                aria-label="Close AI chat"
               >
                 <i className="fa-solid fa-xmark" />
               </button>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-6 min-h-[350px] flex flex-col items-center justify-center text-center">
-              <i className="fa-solid fa-robot text-3xl text-orange-500/40 mb-3" />
-              <p className="font-primary text-xs text-slate-400 dark:text-slate-500">កន្លែងសម្រាប់ AI Chat Bot (ទម្រង់ទូរស័ព្ទ)</p>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <AIChatWidget compact onClose={() => setIsMobileChatOpen(false)} />
             </div>
-
           </div>
         </div>
       )}

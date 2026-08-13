@@ -16,11 +16,16 @@
   --color-nav: #121d33;
 }
 @theme {
-  --font-primary: "Kantumruy Pro", "Poppins";
+  --font-primary: "Kantumruy Pro", sans-serif;
 
 }
 
 html {
+  color-scheme: light;
+  font-family:"Kantumruy Pro", sans-serif;
+}
+
+html.light {
   color-scheme: light;
 }
 
@@ -29,6 +34,7 @@ html.dark {
 }
 
 body {
+  font-family: var(--font-primary);
   @apply bg-background text-text-black transition-colors duration-300;
 }
 

@@ -191,8 +191,9 @@ const LibraryHero = () => {
             </p>
           </div>
 
+          {/* Right column: Single image on mobile, 4-grid on sm+ */}
           <div className="relative flex items-center justify-center lg:justify-end">
-            <div className="grid w-full max-w-md grid-cols-2 gap-4 sm:max-w-lg lg:max-w-none lg:grid-cols-2 lg:gap-6">
+            <div className="flex w-full max-w-md justify-center sm:grid sm:max-w-lg sm:grid-cols-2 sm:gap-4 lg:max-w-none lg:gap-6">
               <img
                 src={book1}
                 alt="Library preview book 1"
@@ -201,17 +202,17 @@ const LibraryHero = () => {
               <img
                 src={book2}
                 alt="Library preview book 2"
-                className="mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
+                className="hidden sm:block mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
               />
               <img
                 src={book3}
                 alt="Library preview book 3"
-                className="mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
+                className="hidden sm:block mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
               />
               <img
                 src={book4}
                 alt="Library preview book 4"
-                className="mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
+                className="hidden sm:block mx-auto w-36 rounded-2xl object-cover shadow-2xl transition duration-500 hover:scale-105 sm:w-44 lg:w-48"
               />
             </div>
           </div>
