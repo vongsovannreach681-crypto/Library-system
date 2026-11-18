@@ -58,11 +58,51 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        $passwordMatches = false;
+
+        try {
+            $passwordMatches = Hash::check($request->password, $user->password);
+        } catch (\Throwable $e) {
+            // Password in DB is plain-text or does not use standard bcrypt algorithm
+            if ($user->password === $request->password) {
+                $passwordMatches = true;
+                $user->password = Hash::make($request->password);
+                $user->save();
+            }
+        }
+
+        // Direct fallback check if plain text matches
+        if (!$passwordMatches && $user->password === $request->password) {
+            $passwordMatches = true;
+            $user->password = Hash::make($request->password);
+            $user->save();
+        }
+
+        if (!$passwordMatches) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        // Ensure default admin user has admin role
+        if ($user->email === 'vongsovannreach681@gmail.com' && $user->role !== 'admin') {
+            $user->role = 'admin';
+            $user->save();
+        }
+
+        // Upgrade hash if algorithm needs rehashing
+        try {
+            if (Hash::needsRehash($user->password)) {
+                $user->password = Hash::make($request->password);
+                $user->save();
+            }
+        } catch (\Throwable $e) {
+            // Ignore rehash inspection errors
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

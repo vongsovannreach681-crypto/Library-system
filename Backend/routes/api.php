@@ -49,6 +49,33 @@ Route::get('/migrate-database', function (Request $request) {
     }
 });
 
+// Admin account reset / seed helper for cloud deployments
+Route::get('/reset-admin', function () {
+    try {
+        $user = \App\Models\User::updateOrCreate(
+            ['email' => 'vongsovannreach681@gmail.com'],
+            [
+                'name' => 'Reach',
+                'password' => \Illuminate\Support\Facades\Hash::make('Reach123!@#'),
+                'role' => 'admin',
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Admin account reset successfully!',
+            'email' => $user->email,
+            'role' => $user->role,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
