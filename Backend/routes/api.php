@@ -19,6 +19,36 @@ Route::get('/posts', [PostController::class, 'index']);
 Route::post('/chatbot', [ChatbotController::class, 'respond']);
 Route::get('/get-all-categories', [CategoryController::class, 'index']);
 
+// Database migration helper for cloud deployments
+Route::get('/migrate-database', function (Request $request) {
+    try {
+        $fresh = $request->query('fresh') === 'true';
+        $seed = $request->query('seed') === 'true';
+
+        $command = $fresh ? 'migrate:fresh' : 'migrate';
+        \Illuminate\Support\Facades\Artisan::call($command, ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        if ($seed) {
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+            $output .= "\n" . \Illuminate\Support\Facades\Artisan::output();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'command' => $command,
+            'message' => 'Database migrations completed successfully!',
+            'output' => $output,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
