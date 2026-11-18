@@ -147,64 +147,15 @@ const BookSubmissionPanel = () => {
 
   return (
     <section className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-12">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#f7fbff_0%,#ffffff_45%,#eef4ff_100%)] shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(135deg,#101827_0%,#0d1320_50%,#111827_100%)]">
-        <div className="grid gap-6 px-5 py-6 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-8 lg:py-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1.5 text-xs font-semibold text-secondary dark:bg-white/10 dark:text-white">
-              <i className="fa-solid fa-book-medical" />
-              Community books
-            </div>
-            <h2 className="font-primary text-3xl font-extrabold leading-tight text-slate-900 dark:text-white sm:text-4xl">
-              Add a book to the library and share it with everyone.
-            </h2>
-            <p className="max-w-2xl font-primary text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
-              Upload a cover, attach the PDF, and choose a category. Your
-              submission will appear in the shared library for other readers to
-              discover.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <button
+      <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-[linear-gradient(135deg,#f7fbff_0%,#ffffff_45%,#eef4ff_100%)] shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-[linear-gradient(135deg,#101827_0%,#0d1320_50%,#111827_100%)]">
+        <button
                 type="button"
                 onClick={openModal}
                 className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#18385f,#3f72af)] px-5 py-3 font-primary text-sm font-semibold text-white transition hover:opacity-95"
               >
                 <i className="fa-solid fa-plus" />
-                Add a book
+                ចែករំលែកសៀវភៅ
               </button>
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 font-primary text-sm font-semibold text-slate-700 transition hover:border-secondary/30 hover:text-secondary dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-              >
-                <i className="fa-regular fa-user" />
-                Sign in first
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            {[
-              "Title, author, and category",
-              "Cover image and PDF upload",
-              "A short description for readers",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10 text-secondary dark:bg-white/10 dark:text-white">
-                    <i className="fa-solid fa-circle-check text-sm" />
-                  </div>
-                  <p className="font-primary text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {item}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {success && (

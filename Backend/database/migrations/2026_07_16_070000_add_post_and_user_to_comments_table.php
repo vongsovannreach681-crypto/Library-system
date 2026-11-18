@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->nullOnDelete();
-            $table->foreignId('post_id')->nullable()->after('user_id')->constrained('posts')->cascadeOnDelete();
+            if (!Schema::hasColumn('comments', 'user_id')) {
+                $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->nullOnDelete();
+            }
+            if (!Schema::hasColumn('comments', 'post_id')) {
+                $table->foreignId('post_id')->nullable()->after('user_id')->constrained('posts')->cascadeOnDelete();
+            }
         });
     }
 
@@ -23,8 +27,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('post_id');
-            $table->dropConstrainedForeignId('user_id');
+            if (Schema::hasColumn('comments', 'post_id')) {
+                $table->dropConstrainedForeignId('post_id');
+            }
+            if (Schema::hasColumn('comments', 'user_id')) {
+                $table->dropConstrainedForeignId('user_id');
+            }
         });
     }
 };

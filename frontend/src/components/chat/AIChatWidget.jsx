@@ -1,435 +1,223 @@
 import React, { useEffect, useRef, useState } from "react";
 import api from "../../api/api";
 
-const assistantMeta = {
-  time: "Aug 13, 3:53 PM",
-  title: "Reach",
-  badge: "Assistant",
-};
+const STORAGE_KEY = "reach_assistant_messages_v2";
+const LANG_STORAGE_KEY = "reach_assistant_lang_v2";
 
 const starterMessage = (language) => ({
   id: "welcome",
   role: "assistant",
   content:
     language === "km"
-      ? "សួស្តី! ខ្ញុំជា Reach Assistant ជំនួយការរបស់អ្នក។ សូមសួរអំពីសៀវភៅ, ការបង្ហោះ, favorites, ឬរបៀបប្រើកម្មវិធី។"
-      : "Hi there! I'm Reach Assistant, your assistant. Ask me about books, posts, favorites, or how to use the app.",
+      ? "សួស្តី! ខ្ញុំជា **Reach Assistant (MAX)**  ជំនួយការ AI របស់អ្នក។\n\nខ្ញុំអាចជួយណែនាំសៀវភៅល្អៗ, គំនិតសរសេរការបង្ហោះ, របៀបរក្សាទុកសៀវភៅចូលចិត្ត, និងការប្រើប្រាស់មុខងារផ្សេងៗក្នុង App។\n\nតើអ្នកចង់ដឹងអ្វីខ្លះថ្ងៃនេះ?"
+      : "Hi there! I'm **Reach Assistant (MAX)** , your AI companion.\n\nI can help recommend books, generate post ideas, guide you through favorites, and explain app features.\n\nWhat would you like to explore today?",
+  timestamp: new Date().toISOString(),
 });
 
-const containsAny = (text, words) => words.some((word) => text.includes(word));
+const quickPrompts = {
+  km: [
+    { label: " ណែនាំសៀវភៅល្អៗ", prompt: "សូមណែនាំសៀវភៅល្អៗដែលគួរអាន" },
+    { label: " សៀវភៅ Mystery", prompt: "ណែនាំសៀវភៅប្រភេទ Mystery & Thriller អាថ៌កំបាំង" },
+    { label: " សៀវភៅអភិវឌ្ឍន៍ខ្លួន", prompt: "ណែនាំសៀវភៅ Self-Help និងទម្លាប់ជោគជ័យ" },
+    { label: " គំនិតសរសេរ Post", prompt: "ផ្តល់គំនិតសរសេរ Post ល្អៗក្នុងប្លុក" },
+    { label: " របៀបរក្សាទុក Favorites", prompt: "តើខ្ញុំអាចរក្សាទុកសៀវភៅចូលចិត្តដោយរបៀបណា?" },
+    { label: " របៀបស្វែងរកសៀវភៅ", prompt: "តើខ្ញុំអាចស្វែងរកសៀវភៅតាមប្រភេទយ៉ាងដូចម្តេច?" },
+  ],
+  en: [
+    { label: " Book Recommendations", prompt: "Can you recommend some must-read books?" },
+    { label: " Mystery & Thriller", prompt: "Recommend some great Mystery and Thriller novels" },
+    { label: " Self-Help & Habits", prompt: "What are the best self-growth and productivity books?" },
+    { label: " Post & Caption Ideas", prompt: "Give me ideas for my next reading feed post" },
+    { label: " How to use Favorites", prompt: "How do I save books to my favorites list?" },
+    { label: " Search & Explore", prompt: "How do I search and filter books in the library?" },
+  ],
+};
+
+// Formats markdown-like text (bold, quotes, bullets, numbered lists)
+const FormattedMessage = ({ text }) => {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-1.5 text-sm leading-relaxed">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+
+        if (trimmed === "") {
+          return <div key={idx} className="h-1.5" />;
+        }
+
+        // Blockquote
+        if (trimmed.startsWith(">")) {
+          const content = trimmed.substring(1).trim();
+          return (
+            <blockquote
+              key={idx}
+              className="my-1 rounded-r-lg border-l-3 border-accent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs italic opacity-90"
+            >
+              {renderFormattedInline(content)}
+            </blockquote>
+          );
+        }
+
+        // Bullet point
+        if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+          const content = trimmed.replace(/^[\s•\-*]+/, "").trim();
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              <span className="flex-1">{renderFormattedInline(content)}</span>
+            </div>
+          );
+        }
+
+        // Numbered list
+        const matchNumber = trimmed.match(/^(\d+[.)])\s*(.*)$/);
+        if (matchNumber) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className="shrink-0 font-semibold text-secondary dark:text-accent text-xs">
+                {matchNumber[1]}
+              </span>
+              <span className="flex-1">{renderFormattedInline(matchNumber[2])}</span>
+            </div>
+          );
+        }
+
+        return <p key={idx}>{renderFormattedInline(line)}</p>;
+      })}
+    </div>
+  );
+};
+
+// Helper to render **bold** within line
+const renderFormattedInline = (str) => {
+  const parts = [];
+  const regex = /\*\*(.*?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(str)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(str.substring(lastIndex, match.index));
+    }
+    parts.push(
+      <strong key={match.index} className="font-bold text-inherit">
+        {match[1]}
+      </strong>
+    );
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < str.length) {
+    parts.push(str.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : str;
+};
+
+const formatMessageTime = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+};
 
 const toApiMessages = (messages) =>
   messages
-    .filter((message) => message.role === "user" || message.role === "assistant")
-    .slice(-10)
-    .map((message) => ({
-      role: message.role,
-      content: message.content,
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .slice(-12)
+    .map((m) => ({
+      role: m.role,
+      content: m.content,
     }));
 
-const pickReply = (language, en, km) => (language === "km" ? km : en);
+const AIChatWidget = ({ compact = false, onClose = null, onNavigateFull = null }) => {
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem(LANG_STORAGE_KEY) || "km";
+  });
 
-const cleanText = (value) => value.toLowerCase().replace(/\s+/g, " ").trim();
-
-const buildSmartReply = (userText, language, history = []) => {
-  const text = cleanText(userText);
-  const khmer = /[\u1780-\u17FF]/.test(userText);
-  const preferKhmer = language === "km" || khmer;
-
-  const lastAssistant = [...history]
-    .reverse()
-    .find((message) => message.role === "assistant")?.content;
-
-  const greeting = containsAny(text, [
-    "hi",
-    "hello",
-    "hey",
-    "sawasdee",
-    "hello there",
-    "សួស្តី",
-    "ជំរាបសួរ",
-  ]);
-
-  if (greeting) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Hi! I can help with books, posts, favorites, profile tips, and app navigation.",
-      "សួស្តី! ខ្ញុំអាចជួយអំពីសៀវភៅ, ការបង្ហោះ, favorites, ការកែ profile និងរបៀបប្រើកម្មវិធី។",
-    );
-  }
-
-  const howAreYou = containsAny(text, [
-    "how are you",
-    "how's it going",
-    "how you doing",
-    "តើអ្នកសុខសប្បាយទេ",
-    "សុខសប្បាយទេ",
-  ]);
-
-  if (howAreYou) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "I'm doing great, thanks for asking! How can I help you today?",
-      "ខ្ញុំសុខសប្បាយ អរគុណដែលបានសួរ! តើថ្ងៃនេះខ្ញុំអាចជួយអ្នកយ៉ាងណាបាន?",
-    );
-  }
-
-  const askName = containsAny(text, [
-    "what's your name",
-    "what is your name",
-    "who are you",
-    "your name",
-    "ឈ្មោះអ្នកជាអ្វី",
-    "អ្នកឈ្មោះអ្វី",
-  ]);
-
-  if (askName) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "I'm Reach Assistant! I'm here to help with books, posts, and getting around the app.",
-      "ខ្ញុំឈ្មោះ Reach Assistant! ខ្ញុំនៅទីនេះដើម្បីជួយអំពីសៀវភៅ, ការបង្ហោះ, និងការប្រើប្រាស់កម្មវិធី។",
-    );
-  }
-
-  const thanks = containsAny(text, [
-    "thank",
-    "thanks",
-    "thank you",
-    "appreciate it",
-    "អរគុណ",
-  ]);
-
-  if (thanks) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "You're welcome! Happy to help anytime.",
-      "សូមស្វាគមន៍! ខ្ញុំរីករាយបានជួយជានិច្ច។",
-    );
-  }
-
-  const farewell = containsAny(text, [
-    "bye",
-    "goodbye",
-    "see you",
-    "see ya",
-    "ជម្រាបលា",
-    "លាហើយ",
-  ]);
-
-  if (farewell) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Goodbye! Come back anytime you need book ideas or help with the app.",
-      "លាហើយ! សូមត្រលប់មកវិញនៅពេលណាដែលអ្នកត្រូវការជំនួយ ឬសៀវភៅណែនាំ។",
-    );
-  }
-
-  const bookIntent = containsAny(text, [
-    "book",
-    "books",
-    "read",
-    "novel",
-    "story",
-    "recommend",
-    "suggest",
-    "សៀវភៅ",
-    "អាន",
-    "ណែនាំ",
-  ]);
-
-  if (bookIntent) {
-    if (containsAny(text, ["mystery", "thriller", "crime", "suspense", "ចម្លែក", "អាថ៌កំបាំង"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "If you want a smart mystery pick, try The Silent Patient, Gone Girl, or And Then There Were None. If you want, I can narrow it down by mood or length.",
-        "បើអ្នកចង់បានសៀវភៅ mystery ល្អៗ សាកល្បង The Silent Patient, Gone Girl, ឬ And Then There Were None។ បើចង់ ខ្ញុំអាចជួយជ្រើសតាមអារម្មណ៍ ឬប្រវែងបាន។",
-      );
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load saved chat", e);
     }
+    return [starterMessage(localStorage.getItem(LANG_STORAGE_KEY) || "km")];
+  });
 
-    if (containsAny(text, ["romance", "love", "relationship", "ស្នេហា"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For romance, good starter picks are The Love Hypothesis, Pride and Prejudice, or Book Lovers.",
-        "សម្រាប់ romance អ្នកអាចសាកល្បង The Love Hypothesis, Pride and Prejudice, ឬ Book Lovers។",
-      );
-    }
-
-    if (containsAny(text, ["self-help", "motivation", "habit", "productivity", "growth", "អភិវឌ្ឍ", "ជោគជ័យ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For self-growth, try Atomic Habits, Deep Work, or The Psychology of Money. Tell me your goal and I can refine the list.",
-        "សម្រាប់ការអភិវឌ្ឍខ្លួនឯង សាកល្បង Atomic Habits, Deep Work, ឬ The Psychology of Money។ បើប្រាប់គោលដៅ ខ្ញុំអាចជួយជ្រើសបន្ថែមបាន។",
-      );
-    }
-
-    if (containsAny(text, ["fantasy", "magic", "adventure", "dragon", "វេទមន្ត"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For fantasy, start with The Hobbit, Harry Potter, or Percy Jackson.",
-        "សម្រាប់ fantasy អ្នកអាចចាប់ផ្តើមពី The Hobbit, Harry Potter, ឬ Percy Jackson។",
-      );
-    }
-
-    if (containsAny(text, ["sci-fi", "scifi", "science fiction", "space", "future", "aliens", "វិទ្យាសាស្ត្រ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For sci-fi, try Dune, The Martian, or Project Hail Mary.",
-        "សម្រាប់ sci-fi សាកល្បង Dune, The Martian, ឬ Project Hail Mary។",
-      );
-    }
-
-    if (containsAny(text, ["horror", "scary", "ghost", "haunted", "creepy", "ខ្មោច", "គួរឱ្យខ្លាច"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For horror, try The Shining, It, or Bird Box — read with the lights on.",
-        "សម្រាប់ horror សាកល្បង The Shining, It, ឬ Bird Box — ល្អបើអានពេលមានពន្លឺ។",
-      );
-    }
-
-    if (containsAny(text, ["biography", "history", "true story", "memoir", "historical", "ប្រវត្តិសាស្ត្រ", "ជីវប្រវត្តិ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For biography or history, try Educated, Sapiens, or Steve Jobs by Walter Isaacson.",
-        "សម្រាប់ជីវប្រវត្តិ ឬប្រវត្តិសាស្ត្រ សាកល្បង Educated, Sapiens, ឬ Steve Jobs (ដោយ Walter Isaacson)។",
-      );
-    }
-
-    if (containsAny(text, ["kids", "children", "child", "picture book", "កុមារ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "For kids, try Charlotte's Web, Matilda, or The Very Hungry Caterpillar.",
-        "សម្រាប់កុមារ សាកល្បង Charlotte's Web, Matilda, ឬ The Very Hungry Caterpillar។",
-      );
-    }
-
-    if (containsAny(text, ["short", "easy", "beginner", "quick", "tiny", "ខ្លី", "ងាយ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "If you want something short and easy, try The Alchemist, Who Moved My Cheese?, or The Little Prince.",
-        "បើចង់បានសៀវភៅខ្លី និងអានងាយ សាកល្បង The Alchemist, Who Moved My Cheese?, ឬ The Little Prince។",
-      );
-    }
-
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Tell me the genre, mood, or age range, and I’ll give you a tighter recommendation list. For example: mystery, romance, self-help, sci-fi, horror, or fantasy.",
-      "ប្រាប់ខ្ញុំអំពី genre, អារម្មណ៍, ឬកម្រិតអាយុ ហើយខ្ញុំនឹងណែនាំឱ្យត្រឹមត្រូវជាងនេះ។ ឧទាហរណ៍: mystery, romance, self-help, sci-fi, horror, ឬ fantasy។",
-    );
-  }
-
-  const postIntent = containsAny(text, [
-    "post",
-    "caption",
-    "write",
-    "content",
-    "blog",
-    "status",
-    "អត្ថបទ",
-    "បង្ហោះ",
-    "សរសេរ",
-  ]);
-
-  if (postIntent) {
-    if (containsAny(text, ["book", "review", "reviewe", "សៀវភៅ"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "Try this: 'I just finished [book title] and loved how it made me feel. The ending stayed with me.' Want it more casual or more polished?",
-        "សាកល្បងសរសេរៈ 'ខ្ញុំ刚អាន [ឈ្មោះសៀវភៅ] រួច ហើយចូលចិត្តអារម្មណ៍ដែលវាបង្កើត។ ចប់រឿងហើយនៅតែគិតដល់វា។' បើចង់ ខ្ញុំអាចធ្វើឱ្យសាមញ្ញ ឬស្អាតជាងនេះបាន។",
-      );
-    }
-
-    if (containsAny(text, ["question", "poll", "engage", "comment", "អន្តរកម្ម"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "A good engagement post is: 'Which book should I read next: mystery, romance, or fantasy?'",
-        "Post សម្រាប់ចូលរួមល្អៗ៖ 'តើខ្ញុំគួរអានសៀវភៅប្រភេទណាបន្ទាប់: mystery, romance, ឬ fantasy?'",
-      );
-    }
-
-    if (containsAny(text, ["funny", "joke", "lighthearted", "humor", "humorous", "កំប្លែង"])) {
-      return pickReply(
-        preferKhmer ? "km" : "en",
-        "Try something lighthearted: 'Currently debating my houseplants about which book to read next. They're leaning towards mystery.' Want a few more options like this?",
-        "សាកល្បង post កំប្លែងបន្តិចៈ 'ថ្ងៃនេះខ្ញុំកំពុងពិភាក្សាជាមួយដើមឈើក្នុងផ្ទះថាគួរអានសៀវភៅអ្វី។ ពួកគេទាំងអស់គ្នាបោះឆ្នោតឱ្យ mystery។' ចង់បានច្រើនទៀតទេ?",
-      );
-    }
-
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "A strong post formula is: hook + one honest thought + a question. Example: 'This book surprised me in the best way. Have you read anything like it?'",
-      "រូបមន្ត post ល្អគឺ: ចាប់អារម្មណ៍ + មតិស្មោះត្រង់ + សំណួរ។ ឧទាហរណ៍: 'សៀវភៅនេះធ្វើឱ្យខ្ញុំភ្ញាក់ផ្អើលខ្លាំង។ តើអ្នកធ្លាប់អានអ្វីប្រហាក់ប្រហែលនេះទេ?'",
-    );
-  }
-
-  if (containsAny(text, ["favorite", "favorites", "bookmark", "save", "liked", "ចូលចិត្ត", "រក្សាទុក"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Favorites are where you save posts or books you want to revisit later. Use them like a personal shelf for the things you liked most.",
-      "Favorites គឺសម្រាប់រក្សាទុក post ឬសៀវភៅដែលអ្នកចង់ត្រលប់មើលពេលក្រោយ។ វាដូចជាធ្នើផ្ទាល់ខ្លួនសម្រាប់អ្វីដែលអ្នកចូលចិត្តបំផុត។",
-    );
-  }
-
-  if (containsAny(text, ["profile", "avatar", "photo", "name", "email", "phone", "edit", "កែ", "គណនី"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "To update your profile, open the profile page, tap edit, change your name or photo, then save changes.",
-      "ដើម្បីកែ profile សូមបើកទំព័រ profile របស់អ្នក រួចចុច edit ប្តូរឈ្មោះ ឬរូបភាព ហើយចុច save changes។",
-    );
-  }
-
-  if (containsAny(text, ["login", "log in", "sign in", "register", "logout", "sign up", "ចូល", "ចាកចេញ"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "If you’re stuck with login or signup, check that your email and password are correct, then try again. I can also help you reset your flow step by step.",
-      "បើអ្នកជាប់លើ login ឬ signup សូមពិនិត្យ email និង password រួចសាកល្បងម្ដងទៀត។ ខ្ញុំក៏អាចជួយបង្ហាញជំហានម្តងមួយបាន។",
-    );
-  }
-
-  if (containsAny(text, ["notification", "notifications", "notify", "alert", "alerts", "ដំណឹង"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Notifications let you know when someone likes, comments, or follows your posts. Check the bell icon to review them.",
-      "ដំណឹងជូនអ្នកនៅពេលមានគេ like, comment ឬ follow post របស់អ្នក។ សូមចុចរូបកណ្តឹងដើម្បីមើលពួកវា។",
-    );
-  }
-
-  if (containsAny(text, ["dark mode", "light mode", "theme", "switch theme", "ងងឹត", "ភ្លឺ"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "You can switch between dark and light mode using the toggle in settings or the top navigation bar.",
-      "អ្នកអាចប្តូររវាង dark mode និង light mode ដោយប្រើប៊ូតុងនៅក្នុង settings ឬនៅលើ navigation bar ខាងលើ។",
-    );
-  }
-
-  if (containsAny(text, ["how to search", "find a book", "find book", "search tips", "searching", "ស្វែងរក"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "Use the search bar to look up book titles, authors, or genres. Shorter, simpler keywords usually give broader results.",
-      "ប្រើប្រអប់ search ដើម្បីរកឈ្មោះសៀវភៅ, អ្នកនិពន្ធ ឬ genre។ ប្រើពាក្យខ្លីៗនិងសាមញ្ញ ដើម្បីទទួលបានលទ្ធផលច្រើនជាង។",
-    );
-  }
-
-  if (containsAny(text, ["contact", "support", "report", "bug", "issue", "problem", "ជំនួយ", "បញ្ហា"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "If you run into a bug or need support, use the contact/support option in settings, or just describe the issue here and I'll try to help.",
-      "បើអ្នកជួបបញ្ហា ឬត្រូវការជំនួយ សូមប្រើប្រអប់ contact/support នៅក្នុង settings ឬពិពណ៌នាបញ្ហានៅទីនេះ ខ្ញុំនឹងព្យាយាមជួយ។",
-    );
-  }
-
-  if (containsAny(text, ["home", "search", "feed", "post", "like", "comment", "navigate", "menu", "explore", "browse"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "You can use the feed to browse posts, the search area to find books, and the buttons around the page to like, comment, and create new posts.",
-      "អ្នកអាចប្រើ feed ដើម្បីមើល post, ប្រអប់ search ដើម្បីរកសៀវភៅ, ហើយប្រើប៊ូតុងជុំវិញទំព័រ ដើម្បី like, comment និងបង្កើត post ថ្មី។",
-    );
-  }
-
-  if (containsAny(text, ["what can you do", "help", "how do you work", "your feature", "about you", "chatbot"])) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      "I can help with book ideas, post ideas, favorites, profile tips, notifications, themes, search tips, and general app navigation. Ask me in plain language and I’ll try to respond with something useful.",
-      "ខ្ញុំអាចជួយអំពី book ideas, post ideas, favorites, profile tips, notifications, theme, របៀប search និងការប្រើប្រាស់កម្មវិធី។ សួរខ្ញុំដោយភាសាសាមញ្ញបានเลย ខ្ញុំនឹងព្យាយាមឆ្លើយឱ្យមានប្រយោជន៍។",
-    );
-  }
-
-  if (lastAssistant) {
-    return pickReply(
-      preferKhmer ? "km" : "en",
-      `I can be more specific if you want. Based on your last question, try adding a detail like genre, mood, or goal. Example: "recommend a short mystery book" or "give me a post idea about this app".`,
-      `ខ្ញុំអាចឆ្លើយឱ្យត្រឹមត្រូវជាងនេះបើអ្នកបន្ថែមលម្អិតបន្តិច។ ឧទាហរណ៍: "ណែនាំសៀវភៅ mystery ខ្លីមួយ" ឬ "ផ្តល់ post idea សម្រាប់ app នេះ"។`,
-    );
-  }
-
-  return pickReply(
-    preferKhmer ? "km" : "en",
-    "I’m not fully sure yet, but I can still help. Try asking about books, posts, favorites, your profile, notifications, themes, or app navigation.",
-    "ខ្ញុំនៅមិនទាន់ប្រាកដទេ ប៉ុន្តែខ្ញុំនៅតែអាចជួយបាន។ សូមសួរអំពីសៀវភៅ, ការបង្ហោះ, favorites, profile, notifications, theme ឬការប្រើកម្មវិធី។",
-  );
-};
-
-const MessageAvatar = ({ role }) => {
-  const isAssistant = role === "assistant";
-  let avatarClasses = "bg-slate-900 text-white dark:bg-white dark:text-slate-900";
-  let iconClass = "fa-user";
-
-  if (isAssistant) {
-    avatarClasses = "bg-[#0f9d58] text-white shadow-[0_10px_22px_rgba(15,157,88,0.24)]";
-    iconClass = "fa-robot";
-  }
-
-  return (
-    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${avatarClasses}`}>
-      <i className={`fa-solid ${iconClass} text-xs`} />
-    </div>
-  );
-};
-
-const ChatBubble = ({ message }) => {
-  const isAssistant = message.role === "assistant";
-  let wrapperClasses = "justify-start";
-  let bubbleClasses =
-    "bg-[#f1f1f1] text-slate-900 shadow-sm dark:bg-white/10 dark:text-white";
-
-  if (!isAssistant) {
-    wrapperClasses = "justify-end";
-    bubbleClasses =
-      "bg-[linear-gradient(135deg,#0f9d58,#0d7f47)] text-white shadow-[0_14px_30px_rgba(15,157,88,0.22)]";
-  }
-
-  return (
-    <div className={`flex items-end gap-3 ${wrapperClasses}`}>
-      {isAssistant && <MessageAvatar role="assistant" />}
-
-      <div className={`max-w-[92%] rounded-[18px] px-4 py-3 text-[15px] leading-6 ${bubbleClasses}`}>
-        <p className="whitespace-pre-line">{message.content}</p>
-      </div>
-
-      {!isAssistant && <MessageAvatar role="user" />}
-    </div>
-  );
-};
-
-const AIChatWidget = ({ compact = false, onClose = null }) => {
-  const [language, setLanguage] = useState("km");
-  const [messages, setMessages] = useState([starterMessage("km")]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [activeModel, setActiveModel] = useState("MAX AI");
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
   const messagesRef = useRef(messages);
 
   useEffect(() => {
     messagesRef.current = messages;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    } catch (e) {
+      console.error("Failed to save chat", e);
+    }
   }, [messages]);
 
   useEffect(() => {
+    localStorage.setItem(LANG_STORAGE_KEY, language);
+  }, [language]);
+
+  useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [messages, isThinking]);
 
   useEffect(() => {
     if (!textareaRef.current) return;
     textareaRef.current.style.height = "0px";
-    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
+    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
   }, [input]);
 
   const handleLanguageChange = (nextLanguage) => {
+    if (nextLanguage === language) return;
     setLanguage(nextLanguage);
-    setMessages([starterMessage(nextLanguage)]);
+    const starter = starterMessage(nextLanguage);
+    setMessages([starter]);
     setInput("");
     setIsThinking(false);
   };
 
-  const sendMessage = async () => {
-    const trimmed = input.trim();
+  const handleClearHistory = () => {
+    if (window.confirm(language === "km" ? "តើអ្នកពិតជាចង់សម្អាតប្រវត្តិសារទាំងអស់មែនទេ?" : "Clear all chat history?")) {
+      const reset = [starterMessage(language)];
+      setMessages(reset);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  const sendMessage = async (customText = null) => {
+    const textToSend = typeof customText === "string" ? customText : input;
+    const trimmed = textToSend.trim();
     if (!trimmed || isThinking) return;
 
     const userMessage = {
       id: `user-${Date.now()}`,
       role: "user",
       content: trimmed,
+      timestamp: new Date().toISOString(),
     };
 
     const nextMessages = [...messagesRef.current, userMessage];
@@ -442,25 +230,38 @@ const AIChatWidget = ({ compact = false, onClose = null }) => {
       const response = await api.post("/chatbot", {
         message: trimmed,
         messages: toApiMessages(nextMessages),
+        language: language,
       });
 
-      const reply =
-        response.data?.reply?.trim() ||
-        buildSmartReply(trimmed, language, nextMessages);
+      const replyText =
+        response.data?.reply ||
+        (language === "km"
+          ? "ខ្ញុំរីករាយណាស់ដែលបានជួយ! សូមសួរខ្ញុំបន្ថែមអំពីសៀវភៅ ឬការប្រើប្រាស់កម្មវិធី។"
+          : "I'm glad to help! Feel free to ask more about books or app features.");
+
+      if (response.data?.model) {
+        setActiveModel(response.data.model);
+      }
 
       const assistantMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: reply,
+        content: replyText,
+        timestamp: new Date().toISOString(),
       };
 
       messagesRef.current = [...nextMessages, assistantMessage];
       setMessages(messagesRef.current);
-    } catch {
+    } catch (err) {
+      console.warn("Chatbot API error, using smart fallback", err);
       const assistantMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: buildSmartReply(trimmed, language, nextMessages),
+        content:
+          language === "km"
+            ? "ខ្ញុំនៅទីនេះជានិច្ចដើម្បីជួយអ្នក! 📖\n\nអ្នកអាចសួរខ្ញុំអំពី៖\n-  **ការណែនាំសៀវភៅល្អៗ** (Mystery, Romance, Self-help)\n-  **គំនិតសរសេរ Post ក្នុងប្លុក**\n-  **ការរក្សាទុកសៀវភៅក្នុង Favorites**\n-  **ការស្វែងរកសៀវភៅក្នុងបណ្ណាល័យ**"
+            : "I'm always here to help you! 📖\n\nFeel free to ask about:\n-  **Book recommendations** (Mystery, Romance, Self-Help)\n-  **Post & caption ideas** for the blog\n-  **Saving favorites**\n-  **Searching library books**",
+        timestamp: new Date().toISOString(),
       };
 
       messagesRef.current = [...nextMessages, assistantMessage];
@@ -470,140 +271,211 @@ const AIChatWidget = ({ compact = false, onClose = null }) => {
     }
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    sendMessage();
-  };
-
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       sendMessage();
     }
   };
 
-  let shellClasses =
-    "flex h-[calc(100vh-7rem)] min-h-[600px] flex-col overflow-hidden rounded-[30px] border border-[#0f9d58] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] dark:border-[#0f9d58] dark:bg-[#0b1020] dark:shadow-[0_24px_70px_rgba(0,0,0,0.42)]";
-
-  if (compact) {
-    shellClasses =
-      "flex h-full max-h-[72vh] flex-col overflow-hidden rounded-[30px] border border-[#0f9d58] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.10)] dark:border-[#0f9d58] dark:bg-[#0b1020] dark:shadow-[0_24px_60px_rgba(0,0,0,0.4)]";
-  }
-
   return (
-    <section className={shellClasses}>
-      <header className="border-b border-[#0f9d58] bg-[#0f9d58] px-4 py-3 text-white dark:border-[#0d7f47] dark:bg-[#0d7f47]">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[#0f9d58] shadow-[0_10px_22px_rgba(0,0,0,0.12)]">
-              <i className="fa-solid fa-robot text-lg" />
-            </div>
+    <div
+      className={`flex flex-col overflow-hidden bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-primary/50 shadow-2xl transition-all duration-200 ${
+        compact
+          ? "h-full w-full rounded-2xl sm:rounded-[24px]"
+          : "h-full min-h-[600px] w-full rounded-2xl"
+      }`}
+    >
+      {/* Header */}
+      <header className="relative z-10 flex items-center justify-between border-b border-primary/40 bg-gradient-to-r from-primary via-nav to-secondary px-4 py-3 text-white shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary font-bold shadow-md">
+            <i className="fa-solid fa-robot text-lg text-primary" />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-primary bg-accent" />
+            </span>
+          </div>
 
-            <div className="flex min-w-0 items-center gap-2">
-              <h3 className="font-primary text-[1.45rem] font-bold leading-tight">
-                {assistantMeta.title}
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-primary text-base font-bold tracking-tight text-white">
+                {language === "km" ? "ជំនួយការ Reach " : "Reach Assistant "}
               </h3>
-              <span className="rounded-full border border-white/40 px-2 py-0.5 text-[11px] font-semibold leading-none text-white/95">
-                {assistantMeta.badge}
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-accent uppercase tracking-wider backdrop-blur-xs">
+                {activeModel}
               </span>
             </div>
+            
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-white">
+          {/* Language Toggle */}
+          <div className="flex rounded-lg bg-black/25 p-0.5 backdrop-blur-xs">
+            <button
+              type="button"
+              onClick={() => handleLanguageChange("km")}
+              className={`rounded-md px-2 py-1 text-xs font-bold transition ${
+                language === "km" ? "bg-accent text-primary shadow-xs font-extrabold" : "text-white/80 hover:text-accent"
+              }`}
+              title="ភាសាខ្មែរ"
+            >
+              KH
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLanguageChange("en")}
+              className={`rounded-md px-2 py-1 text-xs font-bold transition ${
+                language === "en" ? "bg-accent text-primary shadow-xs font-extrabold" : "text-white/80 hover:text-accent"
+              }`}
+              title="English"
+            >
+              EN
+            </button>
           </div>
 
-          <div className="flex items-center gap-3 text-white/95">
-            <button type="button" className="transition hover:opacity-80" aria-label="Call">
-              <i className="fa-solid fa-phone text-sm" />
+          {/* Clear history */}
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 transition hover:bg-white/15 hover:text-accent"
+            title={language === "km" ? "សម្អាតប្រវត្តិសារ" : "Clear conversation"}
+          >
+            <i className="fa-regular fa-trash-can text-xs" />
+          </button>
+
+          {/* Navigate to full page if in popup */}
+         
+
+          {/* Close button */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/80 transition hover:bg-white/15 hover:text-accent"
+              title="Close chat"
+            >
+              <i className="fa-solid fa-xmark text-sm" />
             </button>
-            <button type="button" className="transition hover:opacity-80" aria-label="Mail">
-              <i className="fa-regular fa-envelope text-sm" />
-            </button>
-            <button type="button" className="transition hover:opacity-80" aria-label="More">
-              <i className="fa-solid fa-ellipsis-vertical text-sm" />
-            </button>
-            {onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                aria-label="Close chat"
-              >
-                <i className="fa-solid fa-xmark" />
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-white px-4 py-4 dark:bg-[#0b1020]">
-        <div className="flex flex-col items-center gap-3 text-[12px] text-slate-500 dark:text-slate-400">
-          <span>{assistantMeta.time}</span>
-        </div>
+      {/* Messages area */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto bg-background/50 dark:bg-[#060911] p-4 space-y-4"
+      >
+        {messages.map((msg) => {
+          const isUser = msg.role === "user";
+          return (
+            <div
+              key={msg.id}
+              className={`flex items-end gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
+            >
+              {!isUser && (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-accent shadow-sm border border-secondary/30">
+                  <i className="fa-solid fa-robot text-xs" />
+                </div>
+              )}
 
-        <div className="mt-4 space-y-4">
-          {messages.map((message) => (
-            <ChatBubble key={message.id} message={message} />
-          ))}
+              <div className={`max-w-[85%] sm:max-w-[78%] flex flex-col ${isUser ? "items-end" : "items-start"}`}>
+                <div
+                  className={`rounded-2xl px-4 py-3 shadow-xs ${
+                    isUser
+                      ? "rounded-br-xs bg-gradient-to-r from-primary to-secondary text-white"
+                      : "rounded-bl-xs border border-slate-200 dark:border-primary/40 bg-white dark:bg-primary/25 text-text-black dark:text-pure-white"
+                  }`}
+                >
+                  <FormattedMessage text={msg.content} />
+                </div>
+                {msg.timestamp && (
+                  <span className="mt-1 px-1 text-[10px] text-slate-400 dark:text-slate-500">
+                    {formatMessageTime(msg.timestamp)}
+                  </span>
+                )}
+              </div>
 
-          {isThinking && (
-            <div className="flex items-start gap-3">
-              <MessageAvatar role="assistant" />
-              <div className="rounded-[18px] bg-[#f1f1f1] px-4 py-3 text-sm text-slate-500 dark:bg-white/10 dark:text-slate-300">
-                Thinking...
+              {isUser && (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-white shadow-sm">
+                  <i className="fa-solid fa-user text-xs" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {isThinking && (
+          <div className="flex items-end gap-2.5 justify-start">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-accent shadow-sm border border-secondary/30">
+              <i className="fa-solid fa-robot text-xs" />
+            </div>
+            <div className="rounded-2xl rounded-bl-xs border border-slate-200 dark:border-primary/40 bg-white dark:bg-primary/25 px-4 py-3 shadow-xs">
+              <div className="flex items-center gap-1.5 py-1">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-secondary [animation-delay:-0.3s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-accent [animation-delay:-0.15s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-primary" />
               </div>
             </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      {/* Suggested Quick Prompt Chips */}
+      <div className="border-t border-slate-200 dark:border-primary/40 bg-white dark:bg-[#0c1220] px-3 py-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <span className="shrink-0 font-bold text-slate-400 dark:text-slate-500 text-[11px] uppercase tracking-wider pl-1">
+            {language === "km" ? "សំណួរណែនាំ " : "Suggested "}
+          </span>
+          {(quickPrompts[language] || quickPrompts.km).map((item, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={isThinking}
+              onClick={() => sendMessage(item.prompt)}
+              className="shrink-0 rounded-full border border-slate-200 dark:border-primary/50 bg-background dark:bg-primary/30 px-3 py-1 text-slate-700 dark:text-slate-200 font-medium transition hover:border-secondary hover:bg-secondary/10 hover:text-secondary dark:hover:text-accent dark:hover:border-accent disabled:opacity-50 cursor-pointer"
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <footer className="border-t border-slate-200 bg-white px-3 py-3 dark:border-white/10 dark:bg-[#0b1020]">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="rounded-[22px] border border-[#0f9d58]/30 bg-[#f8faf8] px-3 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/5">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder={language === "km" ? "សួរអ្វីក៏បាន..." : "Ask anything..."}
-              className="max-h-[140px] w-full resize-none bg-transparent px-1 py-1 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
-            />
+      {/* Input Footer */}
+      <footer className="border-t border-slate-200 dark:border-primary/40 bg-white dark:bg-[#0c1220] p-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendMessage();
+          }}
+          className="relative flex items-end gap-2 rounded-2xl border border-slate-200 dark:border-primary/50 bg-background dark:bg-primary/20 p-1.5 focus-within:border-secondary focus-within:ring-2 focus-within:ring-secondary/20 transition"
+        >
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={
+              language === "km"
+                ? "សួរសំណួរអំពីសៀវភៅ, ការបង្ហោះ, ឬជំនួយ... (Enter ដើម្បីផ្ញើ)"
+                : "Ask about books, writing posts, favorites... (Enter to send)"
+            }
+            className="flex-1 max-h-[120px] resize-none bg-transparent px-3 py-2 text-sm text-text-black dark:text-pure-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-primary"
+          />
 
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleLanguageChange("km")}
-                  className={`rounded-lg bg-[#f3f4f6] px-3 py-2 text-sm transition dark:bg-white/10 dark:text-white ${
-                    language === "km" ? "ring-2 ring-[#0f9d58]/30" : "text-slate-700"
-                  }`}
-                >
-                  <span className="mr-1">🇰🇭</span>
-                  ភាសាខ្មែរ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLanguageChange("en")}
-                  className={`rounded-lg bg-[#f3f4f6] px-3 py-2 text-sm transition dark:bg-white/10 dark:text-white ${
-                    language === "en" ? "ring-2 ring-[#0f9d58]/30" : "text-slate-700"
-                  }`}
-                >
-                  <span className="mr-1">🇬🇧</span>
-                  English
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!input.trim() || isThinking}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#6b7280] text-white shadow-[0_10px_22px_rgba(107,114,128,0.28)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label="Ask"
-              >
-                <i className="fa-solid fa-paper-plane text-sm" />
-              </button>
-            </div>
-          </div>
+          <button
+            type="submit"
+            disabled={!input.trim() || isThinking}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-white shadow-md transition hover:bg-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+            aria-label="Send message"
+          >
+            <i className="fa-solid fa-paper-plane text-sm" />
+          </button>
         </form>
       </footer>
-    </section>
+    </div>
   );
 };
 

@@ -6,7 +6,6 @@ import api from "../api/api";
 const navLinks = [
   { label: "ប្លុកវេទីការ", href: "/" },
   { label: "បណ្ណាល័យ", href: "/library" },
-  { label: "មេរៀន", href: "/" },
   { label: "អំពីយើង", href: "" },
 ];
 
@@ -212,6 +211,15 @@ const Header = () => {
             </button>
             <button
               type="button"
+              onClick={() => window.dispatchEvent(new Event("open-ai-chat"))}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors duration-200 hover:bg-white/10 hover:text-accent"
+              aria-label="Open AI chat assistant"
+              title="ជំនួយការ AI (Reach Assistant)"
+            >
+              <i className="fa-solid fa-robot" />
+            </button>
+            <button
+              type="button"
               onClick={() => setIsFavoritesOpen(true)}
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors duration-200 hover:bg-white/10 hover:text-red-500"
               aria-label="Open favorites drawer"
@@ -244,9 +252,9 @@ const Header = () => {
                   {user.name}
                 </span>
                 <i
-                  className={`fa-solid fa-chevron-down text-xs text-white transition-transform ${
-                    isProfileOpen ? "rotate-180" : ""
-                  }`}
+                  className={`fa-solid ${
+                    isProfileOpen ? "fa-chevron-up" : "fa-chevron-down"
+                  } text-xs text-white transition-transform`}
                 />
               </button>
 
@@ -297,6 +305,14 @@ const Header = () => {
               aria-label="Toggle color theme"
             >
               <i className={`fa-solid ${isDarkMode ? "fa-sun" : "fa-moon"}`} />
+            </button>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-ai-chat"))}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors duration-200 hover:bg-white/10 hover:text-accent"
+              aria-label="Open AI chat assistant"
+            >
+              <i className="fa-solid fa-robot" />
             </button>
             <button
               type="button"

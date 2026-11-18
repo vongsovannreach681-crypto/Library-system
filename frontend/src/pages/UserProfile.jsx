@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
 import Header from "../components/Header";
-import FavoritesPage from "./FavoritesPage";
 import PostHistory from "./PostHistory";
+
+const getProfileImage = (person) =>
+  person?.profile_url ||
+  (person?.profile ? `http://localhost:8000/storage/${person.profile}` : "https://via.placeholder.com/300");
+
+const normalizePost = (post) => ({
+  ...post,
+  likes_count: post.likes_count ?? post.likes?.length ?? 0,
+  comments_count: post.comments_count ?? post.comments?.length ?? 0,
+  liked_by_me: Boolean(post.liked_by_me),
+  comments: Array.isArray(post.comments) ? post.comments : [],
+});
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -16,9 +27,14 @@ const UserProfile = () => {
   });
   const [profile, setProfile] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
+  const [favoriteBooks, setFavoriteBooks] = useState([]);
+  const [userPosts, setUserPosts] = useState([]);
+  const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   useEffect(() => {
     const userData = localStorage.getItem("user");
     const token = localStorage.getItem("auth_token");
@@ -36,6 +52,55 @@ const UserProfile = () => {
       phone: parsedUser.phone || "",
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let isMounted = true;
+
+    const loadActivity = async () => {
+      setActivityLoading(true);
+      setError("");
+
+      try {
+        const [favoritesRes, postsRes] = await Promise.all([
+          api.get("/favorites"),
+          api.get("/posts"),
+        ]);
+
+        const favorites = favoritesRes.data?.favorites || [];
+        const postsPayload = postsRes.data?.data || [];
+        const posts = Array.isArray(postsPayload)
+          ? postsPayload
+              .map(normalizePost)
+              .filter(
+                (post) =>
+                  String(post.user_id ?? post.user?.id) === String(user.id),
+              )
+          : [];
+
+        if (!isMounted) return;
+
+        setFavoriteBooks(favorites);
+        setUserPosts(posts);
+      } catch (activityError) {
+        console.error("Failed to load profile activity:", activityError);
+        if (isMounted) {
+          setError("Could not load your favorite books and posts right now.");
+        }
+      } finally {
+        if (isMounted) {
+          setActivityLoading(false);
+        }
+      }
+    };
+
+    loadActivity();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const handleProfileChange = (e) => {
     const file = e.target.files[0];
@@ -152,18 +217,15 @@ const UserProfile = () => {
 
   const avatarSrc =
     profilePreview ||
-    (user.profile
-      ? `http://localhost:8000/storage/${user.profile}`
-      : "https://via.placeholder.com/300");
+    getProfileImage(user);
 
   return (
     <>
       <div className="fixed z-3 top-0 left-0 right-0">
         <Header />
       </div>
-      <section className="flex gap-6 justify-center mt-2">
-        
-        <section className="w-[100%] h-screen ">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-2 sm:px-6 lg:px-8">
+        <section className="w-full">
           {/* Profile Card */}
           <div className="bg-white dark:bg-slate-800 shadowCus borderCus rounded-2xl overflow-hidden">
             {/* Cover Photo */}
@@ -381,7 +443,129 @@ const UserProfile = () => {
           </div>
         </section>
 
-       
+        {!isEditing && (
+          <section className="grid gap-4 lg:grid-cols-2">
+            <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f9d58]">
+                    Favorite Book
+                  </p>
+                  <h2 className="mt-1 font-primary text-xl font-bold text-slate-800 dark:text-white">
+                    Your latest saved book
+                  </h2>
+                </div>
+                <i className="fa-solid fa-star text-[#0f9d58]" />
+              </div>
+
+              {activityLoading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                  Loading your favorite books...
+                </div>
+              ) : favoriteBooks.length > 0 ? (
+                <Link
+                  to={`/bookDetail/${favoriteBooks[0].id}`}
+                  className="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-950"
+                >
+                  <div className="h-28 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                    <img
+                      src={favoriteBooks[0].cover_image}
+                      alt={favoriteBooks[0].title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="line-clamp-1 text-lg font-bold text-slate-900 dark:text-white">
+                      {favoriteBooks[0].title}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {favoriteBooks[0].author || favoriteBooks[0].category_name || "Book"}
+                    </p>
+                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                      {favoriteBooks[0].description || "Saved to your favorites."}
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                  No favorite books yet.
+                </div>
+              )}
+            </article>
+
+            <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f9d58]">
+                    Latest Post
+                  </p>
+                  <h2 className="mt-1 font-primary text-xl font-bold text-slate-800 dark:text-white">
+                    Your recent post
+                  </h2>
+                </div>
+                <i className="fa-solid fa-pen-to-square text-[#0f9d58]" />
+              </div>
+
+              {activityLoading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                  Loading your posts...
+                </div>
+              ) : userPosts.length > 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={getProfileImage(user)}
+                      alt={user.name}
+                      className="h-11 w-11 rounded-full object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {userPosts[0].content || "Shared post"}
+                  </p>
+
+                  {userPosts[0].image_url && (
+                    <div className="mt-4 overflow-hidden rounded-xl">
+                      <img
+                        src={userPosts[0].image_url}
+                        alt="Post attachment"
+                        className="max-h-64 w-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <span>{userPosts[0].comments_count ?? 0} comments</span>
+                    <span>{userPosts[0].likes_count ?? 0} likes</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                  No posts yet.
+                </div>
+              )}
+            </article>
+          </section>
+        )}
+
+        {!isEditing && (
+          <PostHistory
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            posts={userPosts}
+            favorites={favoriteBooks}
+            loading={activityLoading}
+            error={error}
+          />
+        )}
       </section>
     </>
   );

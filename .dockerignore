@@ -1,0 +1,11 @@
+.git
+frontend
+Admin
+app
+Backend/vendor
+Backend/node_modules
+Backend/.env
+Backend/storage/logs/*
+Backend/storage/framework/sessions/*
+Backend/storage/framework/views/*
+Backend/storage/framework/cache/*

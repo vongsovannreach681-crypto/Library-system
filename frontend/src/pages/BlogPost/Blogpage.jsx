@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import BlogHero from "../../components/HeroSection/BlogHero";
-import AIChatWidget from "../../components/chat/AIChatWidget";
 
 const formatCount = (value = 0) => {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -77,6 +76,223 @@ const SectionHeading = ({ title, action }) => (
   </div>
 );
 
+// ─── Post Detail Modal ────────────────────────────────────────────────────────
+const PostDetailModal = ({
+  post,
+  currentUser,
+  onClose,
+  onLike,
+  canInteract,
+  onRequireLogin,
+  onCommentSubmit,
+}) => {
+  const [commentText, setCommentText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
+  const [comments, setComments] = useState(post.comments || []);
+  const [likesCount, setLikesCount] = useState(post.likes_count);
+  const [likedByMe, setLikedByMe] = useState(post.liked_by_me);
+  const commentsEndRef = useRef(null);
+
+  // Close on backdrop click or Escape
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const scrollToBottom = () => {
+    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleLike = async () => {
+    if (!canInteract) { onRequireLogin(); return; }
+    try {
+      const response = await api.post(`/posts/${post.id}/like`);
+      setLikedByMe(response.data.liked);
+      setLikesCount(response.data.likes_count);
+      onLike(post.id, response.data.liked, response.data.likes_count);
+    } catch { /* silent */ }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    const text = commentText.trim();
+    if (!text) return;
+    if (!canInteract) { onRequireLogin(); return; }
+
+    setCommentError("");
+    setSubmitting(true);
+    try {
+      const response = await api.post("/comments", { post_id: post.id, comment: text });
+      // Server may return 201 with body OR 204 with no body — handle both
+      const serverComment = response.data && typeof response.data === "object" && response.data.id
+        ? response.data
+        : null;
+      const enriched = serverComment
+        ? { ...serverComment, user: serverComment.user || currentUser }
+        : { id: Date.now(), comment: text, post_id: post.id, created_at: new Date().toISOString(), user: currentUser };
+      setComments((prev) => [...prev, enriched]);
+      setCommentText("");
+      onCommentSubmit(post.id, enriched);
+      setTimeout(scrollToBottom, 100);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.response?.data?.errors?.comment?.[0] || "មិនអាចបញ្ចូលមតិបានទេ។";
+      setCommentError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const mediaSrc = post.image_url || post.image || null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-6">
+      {/* Backdrop */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative z-10 flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <Avatar person={post.user} sizeClass="h-10 w-10" textClass="text-sm" />
+            <div>
+              <p className="font-primary text-sm font-bold text-slate-800 dark:text-white">
+                {post.user?.name || "Unknown"}
+              </p>
+              <p className="text-[11px] text-slate-400">{formatRelativeTime(post.created_at)}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/10"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Image */}
+          {mediaSrc && (
+            <div className="w-full max-h-[300px] overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
+              <img src={mediaSrc} alt="Post" className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          {/* Post content */}
+          <div className="px-5 py-4">
+            <p className="whitespace-pre-line text-sm font-primary leading-6 text-slate-700 dark:text-slate-200">
+              {post.content}
+            </p>
+          </div>
+
+          {/* Like / stats bar */}
+          <div className="flex items-center justify-between px-5 pb-3 border-b border-slate-100 dark:border-white/8">
+            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[8px] text-white">
+                <i className="fa-solid fa-thumbs-up" />
+              </span>
+              {formatCount(likesCount)}
+            </span>
+            <span className="text-xs font-primary text-slate-400">
+              {formatCount(comments.length)} មតិយោបល់
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex border-b border-slate-100 dark:border-white/8">
+            <button
+              type="button"
+              onClick={handleLike}
+              className={`inline-flex flex-1 items-center justify-center gap-2 py-2.5 text-xs font-semibold transition hover:bg-slate-50 dark:hover:bg-white/5 ${
+                likedByMe ? "text-secondary font-bold" : "text-slate-400"
+              }`}
+            >
+              <i className={`fa-${likedByMe ? "solid" : "regular"} fa-thumbs-up`} />
+              <span className="font-primary">ចូលចិត្ត</span>
+            </button>
+            <button
+              type="button"
+              className="inline-flex flex-1 items-center justify-center gap-2 py-2.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-50 dark:hover:bg-white/5"
+              onClick={() => document.getElementById("detail-comment-input")?.focus()}
+            >
+              <i className="fa-regular fa-comment" />
+              <span className="font-primary">មតិយោបល់</span>
+            </button>
+          </div>
+
+          {/* Comments list */}
+          <div className="px-5 py-4 space-y-3">
+            {comments.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 font-primary py-4">
+                មិនទាន់មានមតិយោបល់។ សូមបញ្ចេញមតិដំបូង!
+              </p>
+            ) : (
+              comments.map((comment, idx) => (
+                <div key={comment.id ?? idx} className="flex items-start gap-2.5">
+                  <Avatar person={comment.user} sizeClass="h-7 w-7" textClass="text-[9px]" />
+                  <div className="flex-1 rounded-2xl bg-slate-100 dark:bg-white/5 px-3 py-2 border border-slate-200/60 dark:border-white/5">
+                    <p className="text-[11px] font-bold text-slate-800 dark:text-white font-primary">
+                      {comment.user?.name || "Someone"}
+                    </p>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-600 dark:text-slate-300 font-primary">
+                      {comment.comment}
+                    </p>
+                    <p className="mt-1 text-[10px] text-slate-400">
+                      {formatRelativeTime(comment.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={commentsEndRef} />
+          </div>
+        </div>
+
+        {/* Comment input */}
+        <div className="shrink-0 border-t border-slate-100 dark:border-white/8 px-5 py-3">
+          {commentError && (
+            <p className="mb-2 text-xs text-red-500 font-primary">{commentError}</p>
+          )}
+          <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
+            <Avatar person={currentUser} sizeClass="h-8 w-8" textClass="text-[10px]" />
+            <div className="flex flex-1 items-center gap-2 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/8 px-4 py-2">
+              <input
+                id="detail-comment-input"
+                type="text"
+                value={commentText}
+                onChange={(e) => { setCommentText(e.target.value); setCommentError(""); }}
+                placeholder={canInteract ? "សរសេរមតិយោបល់..." : "សូមចូលគណនី ដើម្បីបញ្ចេញមតិ"}
+                disabled={!canInteract}
+                className="flex-1 bg-transparent text-xs font-primary text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim() || submitting || !canInteract}
+                className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <i className="fa-solid fa-spinner animate-spin text-[10px]" />
+                ) : (
+                  <i className="fa-solid fa-paper-plane text-[10px]" />
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Post Card ────────────────────────────────────────────────────────────────
 const PostCard = ({
   post,
   currentUser,
@@ -86,22 +302,60 @@ const PostCard = ({
   canManage,
   onEditPost,
   onDeletePost,
+  onOpenDetail,
+  onCommentSubmit,
 }) => {
   const mediaSrc = post.image_url || post.image || null;
   const comments = post.comments || [];
   const previewComments = comments.slice(0, 2);
 
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    const text = commentText.trim();
+    if (!text) return;
+    if (!canInteract) { onRequireLogin(); return; }
+
+    setSubmitting(true);
+    try {
+      const response = await api.post("/comments", { post_id: post.id, comment: text });
+      // Server may return 201 with body OR 204 with no body — handle both
+      const serverComment = response.data && typeof response.data === "object" && response.data.id
+        ? response.data
+        : null;
+      const enriched = serverComment
+        ? { ...serverComment, user: serverComment.user || currentUser }
+        : { id: Date.now(), comment: text, post_id: post.id, created_at: new Date().toISOString(), user: currentUser };
+      setCommentText("");
+      setShowCommentInput(false);
+      onCommentSubmit(post.id, enriched);
+    } catch (err) {
+      console.error("Comment failed:", err?.response?.data || err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <article className="flex flex-col h-full min-h-[400px] overflow-hidden rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition-all duration-200">
-      {mediaSrc ? (
-        <div className="h-[220px] w-full overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
-          <img src={mediaSrc} alt="Post attachment" className="h-full w-full object-cover" loading="lazy" />
-        </div>
-      ) : (
-        <div className="h-[220px] w-full flex items-center justify-center bg-slate-100 dark:bg-[#161c2c]/40 border-b border-slate-200/40 dark:border-white/5 text-slate-400">
-          <i className="fa-regular fa-image text-3xl opacity-30" />
-        </div>
-      )}
+      {/* Image — clickable to open detail */}
+      <div
+        className="cursor-pointer"
+        onClick={() => onOpenDetail(post)}
+      >
+        {mediaSrc ? (
+          <div className="h-[220px] w-full overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
+            <img src={mediaSrc} alt="Post attachment" className="h-full w-full object-cover" loading="lazy" />
+          </div>
+        ) : (
+          <div className="h-[220px] w-full flex items-center justify-center bg-slate-100 dark:bg-[#161c2c]/40 border-b border-slate-200/40 dark:border-white/5 text-slate-400">
+            <i className="fa-regular fa-image text-3xl opacity-30" />
+          </div>
+        )}
+      </div>
 
       <div className="flex items-start justify-between gap-3 px-4 pt-4">
         <div className="flex min-w-0 items-center gap-2">
@@ -139,7 +393,11 @@ const PostCard = ({
         )}
       </div>
 
-      <div className="px-4 pb-3 pt-2 flex-1 flex flex-col justify-between">
+      {/* Post content — clickable to open detail */}
+      <div
+        className="px-4 pb-3 pt-2 flex-1 flex flex-col justify-between cursor-pointer"
+        onClick={() => onOpenDetail(post)}
+      >
         <p className="whitespace-pre-line text-xs font-primary leading-5 text-slate-600 dark:text-slate-200 line-clamp-3">
           {post.content}
         </p>
@@ -155,15 +413,14 @@ const PostCard = ({
         </div>
       </div>
 
+      {/* Action buttons */}
       <div className="mt-auto">
         <div className="flex items-center border-y border-slate-100 dark:border-white/8 px-2 py-0.5">
+          {/* Like */}
           <button
             type="button"
             onClick={() => {
-              if (!canInteract) {
-                onRequireLogin();
-                return;
-              }
+              if (!canInteract) { onRequireLogin(); return; }
               onLike(post.id);
             }}
             className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition ${
@@ -173,8 +430,66 @@ const PostCard = ({
             <i className={`fa-${post.liked_by_me ? "solid" : "regular"} fa-thumbs-up`} />
             <span className="font-primary">ចូលចិត្ត</span>
           </button>
+
+          <div className="w-px h-5 bg-slate-200 dark:bg-white/10" />
+
+          {/* Comment toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!canInteract) { onRequireLogin(); return; }
+              setShowCommentInput((prev) => !prev);
+            }}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            <i className="fa-regular fa-comment" />
+            <span className="font-primary">មតិយោបល់</span>
+          </button>
+
+          <div className="w-px h-5 bg-slate-200 dark:bg-white/10" />
+
+          {/* View detail */}
+          <button
+            type="button"
+            onClick={() => onOpenDetail(post)}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            <i className="fa-regular fa-eye" />
+            <span className="font-primary">មើល</span>
+          </button>
         </div>
 
+        {/* Inline comment input */}
+        {showCommentInput && (
+          <div className="px-3 py-2 bg-slate-50/70 dark:bg-black/10 border-b border-slate-100 dark:border-white/5">
+            <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+              <Avatar person={currentUser} sizeClass="h-7 w-7" textClass="text-[9px]" />
+              <div className="flex flex-1 items-center gap-2 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/8 px-3 py-1.5">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="សរសេរមតិយោបល់..."
+                  autoFocus
+                  className="flex-1 bg-transparent text-[11px] font-primary text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentText.trim() || submitting}
+                  className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <i className="fa-solid fa-spinner animate-spin text-[9px]" />
+                  ) : (
+                    <i className="fa-solid fa-paper-plane text-[9px]" />
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Preview comments */}
         {previewComments.length > 0 && (
           <div className="space-y-2 px-4 py-3 bg-slate-50/50 dark:bg-black/15">
             <div className="space-y-1.5">
@@ -199,6 +514,7 @@ const PostCard = ({
   );
 };
 
+// ─── Composer Modal ───────────────────────────────────────────────────────────
 const ComposerModal = ({
   user,
   composer,
@@ -300,6 +616,7 @@ const ComposerModal = ({
   );
 };
 
+// ─── Blogpage ─────────────────────────────────────────────────────────────────
 const Blogpage = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -317,7 +634,7 @@ const Blogpage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [composer, setComposer] = useState({ content: "", image: null });
   const [imagePreview, setImagePreview] = useState("");
-  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   const resetComposer = () => {
     setComposer({ content: "", image: null });
@@ -431,8 +748,56 @@ const Blogpage = () => {
     if (!user) { requireLogin(); return; }
     try {
       const response = await api.post(`/posts/${postId}/like`);
-      setPosts((current) => current.map((p) => p.id === postId ? { ...p, liked_by_me: response.data.liked, likes_count: response.data.likes_count } : p));
+      setPosts((current) =>
+        current.map((p) =>
+          p.id === postId
+            ? { ...p, liked_by_me: response.data.liked, likes_count: response.data.likes_count }
+            : p
+        )
+      );
     } catch { setError("Unable to update like."); }
+  };
+
+  // Called from detail modal when user likes inside it
+  const handleDetailLike = (postId, liked, likesCount) => {
+    setPosts((current) =>
+      current.map((p) =>
+        p.id === postId ? { ...p, liked_by_me: liked, likes_count: likesCount } : p
+      )
+    );
+    // Sync selected post
+    setSelectedPost((prev) =>
+      prev && prev.id === postId ? { ...prev, liked_by_me: liked, likes_count: likesCount } : prev
+    );
+  };
+
+  // Called when a comment is submitted (from card or detail modal)
+  const handleCommentSubmit = (postId, newComment) => {
+    setPosts((current) =>
+      current.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              comments: [...(p.comments || []), newComment],
+              comments_count: (p.comments_count || 0) + 1,
+            }
+          : p
+      )
+    );
+    // Keep detail modal in sync if open
+    setSelectedPost((prev) =>
+      prev && prev.id === postId
+        ? {
+            ...prev,
+            comments: [...(prev.comments || []), newComment],
+            comments_count: (prev.comments_count || 0) + 1,
+          }
+        : prev
+    );
+  };
+
+  const handleOpenDetail = (post) => {
+    navigate(`/post/${post.id}`, { state: { post } });
   };
 
   const loadMore = () => {
@@ -506,6 +871,8 @@ const Blogpage = () => {
                       canManage={Boolean(user && (user.id === post.user_id || user.id === post.user?.id))}
                       onEditPost={openEditComposer}
                       onDeletePost={handleDeletePost}
+                      onOpenDetail={handleOpenDetail}
+                      onCommentSubmit={handleCommentSubmit}
                     />
                   ))}
                 </div>
@@ -523,43 +890,7 @@ const Blogpage = () => {
         </div>
       </section>
 
-      <button
-        type="button"
-        onClick={() => setIsMobileChatOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0f9d58] text-white shadow-[0_18px_35px_rgba(15,157,88,0.28)] transition hover:opacity-95 active:scale-95"
-        aria-label="Open AI chat"
-      >
-        <i className="fa-solid fa-robot text-xl" />
-      </button>
-
-      {isMobileChatOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <div className="flex h-[88vh] w-full flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-white shadow-[0_-20px_60px_rgba(0,0,0,0.35)] sm:h-[82vh] sm:max-w-2xl sm:rounded-[28px]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10 dark:bg-[#0b1020]">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f9d58] text-white">
-                  <i className="fa-solid fa-robot text-xs" />
-                </span>
-                <p className="font-primary text-sm font-bold text-slate-800 dark:text-white">
-                  MAX
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMobileChatOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 dark:bg-white/10 dark:text-white"
-                aria-label="Close AI chat"
-              >
-                <i className="fa-solid fa-xmark" />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <AIChatWidget compact onClose={() => setIsMobileChatOpen(false)} />
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Composer Modal */}
       {isComposerOpen && (
         <ComposerModal 
           user={user} 
@@ -579,6 +910,19 @@ const Blogpage = () => {
             setImagePreview("");
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
+        />
+      )}
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          currentUser={user}
+          canInteract={Boolean(user)}
+          onRequireLogin={requireLogin}
+          onClose={() => setSelectedPost(null)}
+          onLike={handleDetailLike}
+          onCommentSubmit={handleCommentSubmit}
         />
       )}
     </main>

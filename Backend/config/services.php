@@ -37,7 +37,12 @@ return [
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
-        'chat_model' => env('OPENAI_CHAT_MODEL', 'gpt-5.6-luna'),
+        'chat_model' => env('OPENAI_CHAT_MODEL', 'gpt-4o-mini'),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
     ],
 
 ];
