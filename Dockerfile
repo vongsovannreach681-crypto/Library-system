@@ -52,6 +52,7 @@ RUN composer dump-autoload --optimize --no-dev
 COPY Backend/docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY Backend/docker/supervisord.conf /etc/supervisord.conf
 COPY Backend/docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY Backend/docker/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY Backend/docker/entrypoint.sh /entrypoint.sh
 
 # Fix permissions and line endings
