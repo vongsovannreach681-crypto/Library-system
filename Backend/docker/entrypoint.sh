@@ -15,6 +15,9 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
+# Ensure SESSION_DRIVER is file (not database) to avoid dependency on database sessions table
+sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=file|" /var/www/html/.env 2>/dev/null || true
+
 # Synchronize or generate APP_KEY
 if [ -n "$APP_KEY" ]; then
     echo "===> Syncing APP_KEY from environment..."
@@ -24,6 +27,16 @@ else
         echo "===> Generating new APP_KEY..."
         php artisan key:generate --force
     fi
+fi
+
+# If using Neon pooled connection, switch to direct connection for migrations
+# PgBouncer pooled connections fail on DDL transactions (SQLSTATE 25P02)
+if [[ "$DATABASE_URL" == *"-pooler."* ]]; then
+    echo "===> Detected Neon pooled connection. Switching to direct host for migrations..."
+    DIRECT_URL="${DATABASE_URL//-pooler./.}"
+    export DATABASE_URL="$DIRECT_URL"
+    export DB_URL="$DIRECT_URL"
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=${DIRECT_URL}|" /var/www/html/.env 2>/dev/null || true
 fi
 
 # Ensure storage directories and permissions
