@@ -326,6 +326,16 @@ const PostCard = ({
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/post/${post.id}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -336,7 +346,6 @@ const PostCard = ({
     setSubmitting(true);
     try {
       const response = await api.post("/comments", { post_id: post.id, comment: text });
-      // Server may return 201 with body OR 204 with no body — handle both
       const serverComment = response.data && typeof response.data === "object" && response.data.id
         ? response.data
         : null;
@@ -354,145 +363,169 @@ const PostCard = ({
   };
 
   return (
-    <article className="flex flex-col h-full min-h-[400px] overflow-hidden rounded-2xl border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.35)] transition-all duration-200">
-      {/* Image — clickable to open detail */}
-      <div
-        className="cursor-pointer"
-        onClick={() => onOpenDetail(post)}
-      >
-        {mediaSrc && !imageFailed ? (
-          <div className="h-[220px] w-full overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
-            <img
-              src={mediaSrc}
-              alt="Post attachment"
-              className="h-full w-full object-cover"
-              loading="lazy"
-              onError={() => setImageFailed(true)}
-            />
-          </div>
-        ) : (
-          <div className="h-[220px] w-full flex flex-col items-center justify-center bg-slate-100 dark:bg-[#161c2c]/40 border-b border-slate-200/40 dark:border-white/5 text-slate-400 gap-1.5">
-            <i className="fa-regular fa-image text-3xl opacity-30" />
-            <span className="text-[10px] opacity-40 font-primary">គ្មានរូបភាព</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-start justify-between gap-3 px-4 pt-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Avatar person={post.user} sizeClass="h-8 w-8" textClass="text-[10px]" />
-          <div className="min-w-0">
-            <h3 className="truncate font-primary text-xs font-bold leading-tight text-slate-800 dark:text-white">
-              {post.user?.name || "Unknown user"}
-            </h3>
-            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
-              <span>{formatRelativeTime(post.created_at)}</span>
-              <i className="fa-solid fa-earth-africa text-[9px]" />
+    <article className="group flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111522] shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35)] hover:border-slate-300 dark:hover:border-white/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_16px_40px_rgba(0,0,0,0.45)] transition-all duration-300 overflow-hidden">
+      
+      <div>
+        {/* 1. Author Header at the Top */}
+        <div className="flex items-center justify-between gap-3 p-4 sm:p-5 pb-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar person={post.user} sizeClass="h-10 w-10" textClass="text-xs" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="truncate font-primary text-sm font-bold text-slate-900 dark:text-white hover:text-secondary dark:hover:text-accent transition-colors">
+                  {post.user?.name || "Unknown user"}
+                </h3>
+                {post.user?.role === "admin" && (
+                  <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+                <span>{formatRelativeTime(post.created_at)}</span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1">
+                  <i className="fa-solid fa-earth-asia text-[10px]" />
+                  <span className="hidden sm:inline">សាធារណៈ</span>
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Action Controls for Author */}
+          {canManage && (
+            <div className="flex items-center gap-1 rounded-lg bg-slate-100/80 dark:bg-white/5 p-1">
+              <button
+                type="button"
+                onClick={() => onEditPost(post)}
+                className="rounded-md p-1.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-white/10 hover:text-secondary dark:hover:text-accent transition-colors"
+                title="កែសម្រួល / Edit"
+              >
+                <i className="fa-solid fa-pen" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeletePost(post)}
+                className="rounded-md p-1.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-500 transition-colors"
+                title="លុប / Delete"
+              >
+                <i className="fa-regular fa-trash-can" />
+              </button>
+            </div>
+          )}
         </div>
 
-        {canManage && (
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => onEditPost(post)}
-              className="rounded-full p-1 text-xs text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/5 hover:text-orange-500"
-              aria-label="Edit post"
-            >
-              <i className="fa-solid fa-pen-to-square" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDeletePost(post)}
-              className="rounded-full p-1 text-xs text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500"
-              aria-label="Delete post"
-            >
-              <i className="fa-solid fa-trash-can" />
-            </button>
+        {/* 2. Post Content Text */}
+        <div
+          className="px-4 sm:px-5 pb-3 cursor-pointer"
+          onClick={() => onOpenDetail(post)}
+        >
+          <p className="whitespace-pre-line font-primary text-sm leading-relaxed text-slate-700 dark:text-slate-200 line-clamp-4">
+            {post.content}
+          </p>
+        </div>
+
+        {/* 3. Media Attachment (Rendered ONLY if post has a valid image) */}
+        {mediaSrc && !imageFailed && (
+          <div
+            className="px-4 sm:px-5 pb-3 cursor-pointer"
+            onClick={() => onOpenDetail(post)}
+          >
+            <div className="relative overflow-hidden rounded-xl border border-slate-200/60 dark:border-white/8 bg-slate-100 dark:bg-black/30 max-h-[340px]">
+              <img
+                src={mediaSrc}
+                alt="Post attachment"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.01]"
+                loading="lazy"
+                onError={() => setImageFailed(true)}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Post content — clickable to open detail */}
-      <div
-        className="px-4 pb-3 pt-2 flex-1 flex flex-col justify-between cursor-pointer"
-        onClick={() => onOpenDetail(post)}
-      >
-        <p className="whitespace-pre-line text-xs font-primary leading-5 text-slate-600 dark:text-slate-200 line-clamp-3">
-          {post.content}
-        </p>
-        
-        <div className="mt-3 flex flex-wrap items-center justify-between text-[11px] text-slate-400 border-t border-slate-100 dark:border-white/5 pt-2">
-          <span className="inline-flex items-center gap-1">
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[8px] text-white">
+      <div>
+        {/* 4. Stats & Metrics Counter */}
+        <div className="flex items-center justify-between px-4 sm:px-5 py-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-1.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[9px] text-white shadow-xs">
               <i className="fa-solid fa-thumbs-up" />
             </span>
-            {formatCount(post.likes_count)}
-          </span>
-          <span className="font-primary">{formatCount(post.comments_count)} មតិយោបល់</span>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="mt-auto">
-        <div className="flex items-center border-y border-slate-100 dark:border-white/8 px-2 py-0.5">
-          {/* Like */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!canInteract) { onRequireLogin(); return; }
-              onLike(post.id);
-            }}
-            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition ${
-              post.liked_by_me ? "text-secondary font-bold" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
-            }`}
-          >
-            <i className={`fa-${post.liked_by_me ? "solid" : "regular"} fa-thumbs-up`} />
-            <span className="font-primary">ចូលចិត្ត</span>
-          </button>
-
-          <div className="w-px h-5 bg-slate-200 dark:bg-white/10" />
-
-          {/* Comment toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!canInteract) { onRequireLogin(); return; }
-              setShowCommentInput((prev) => !prev);
-            }}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/5"
-          >
-            <i className="fa-regular fa-comment" />
-            <span className="font-primary">មតិយោបល់</span>
-          </button>
-
-          <div className="w-px h-5 bg-slate-200 dark:bg-white/10" />
-
-          {/* View detail */}
-          <button
-            type="button"
-            onClick={() => onOpenDetail(post)}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-100 dark:hover:bg-white/5"
-          >
-            <i className="fa-regular fa-eye" />
-            <span className="font-primary">មើល</span>
-          </button>
+            <span className="font-semibold">{formatCount(post.likes_count)}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="font-primary hover:underline cursor-pointer" onClick={() => onOpenDetail(post)}>
+              {formatCount(post.comments_count)} មតិយោបល់
+            </span>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="hover:text-secondary dark:hover:text-accent transition-colors"
+              title="ចែករំលែក"
+            >
+              <i className={`fa-solid ${copied ? "fa-check text-green-500" : "fa-share-nodes"}`} />
+            </button>
+          </div>
         </div>
 
-        {/* Inline comment input */}
+        {/* 5. Interactive Action Buttons */}
+        <div className="border-t border-slate-100 dark:border-white/5 px-2 py-1 bg-slate-50/40 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            {/* Like Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!canInteract) { onRequireLogin(); return; }
+                onLike(post.id);
+              }}
+              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold font-primary transition-all duration-200 ${
+                post.liked_by_me
+                  ? "text-secondary dark:text-accent font-bold bg-secondary/10 dark:bg-accent/10"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+              }`}
+            >
+              <i className={`fa-${post.liked_by_me ? "solid text-secondary dark:text-accent" : "regular"} fa-thumbs-up text-sm`} />
+              <span>ចូលចិត្ត</span>
+            </button>
+
+            {/* Comment Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!canInteract) { onRequireLogin(); return; }
+                setShowCommentInput((prev) => !prev);
+              }}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold font-primary text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            >
+              <i className="fa-regular fa-comment text-sm" />
+              <span>មតិយោបល់</span>
+            </button>
+
+            {/* View Details */}
+            <button
+              type="button"
+              onClick={() => onOpenDetail(post)}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold font-primary text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            >
+              <i className="fa-regular fa-eye text-sm" />
+              <span>មើល</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 6. Inline Comment Input */}
         {showCommentInput && (
-          <div className="px-3 py-2 bg-slate-50/70 dark:bg-black/10 border-b border-slate-100 dark:border-white/5">
-            <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+          <div className="px-4 py-3 bg-slate-50 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
+            <form onSubmit={handleCommentSubmit} className="flex items-center gap-2.5">
               <Avatar person={currentUser} sizeClass="h-7 w-7" textClass="text-[9px]" />
-              <div className="flex flex-1 items-center gap-2 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/8 px-3 py-1.5">
+              <div className="flex flex-1 items-center gap-2 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 px-3.5 py-1.5 shadow-xs">
                 <input
                   type="text"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="សរសេរមតិយោបល់..."
+                  placeholder="សរសេរមតិយោបល់របស់អ្នក..."
                   autoFocus
-                  className="flex-1 bg-transparent text-[11px] font-primary text-slate-700 dark:text-slate-200 outline-none placeholder:text-slate-400"
+                  className="flex-1 bg-transparent text-xs font-primary text-slate-800 dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
                 <button
                   type="submit"
@@ -500,9 +533,9 @@ const PostCard = ({
                   className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
-                    <i className="fa-solid fa-spinner animate-spin text-[9px]" />
+                    <i className="fa-solid fa-spinner animate-spin text-[10px]" />
                   ) : (
-                    <i className="fa-solid fa-paper-plane text-[9px]" />
+                    <i className="fa-solid fa-paper-plane text-[10px]" />
                   )}
                 </button>
               </div>
@@ -510,24 +543,33 @@ const PostCard = ({
           </div>
         )}
 
-        {/* Preview comments */}
+        {/* 7. Preview Comments */}
         {previewComments.length > 0 && (
-          <div className="space-y-2 px-4 py-3 bg-slate-50/50 dark:bg-black/15">
-            <div className="space-y-1.5">
+          <div className="space-y-2 px-4 sm:px-5 py-3 bg-slate-50/70 dark:bg-black/20 border-t border-slate-100 dark:border-white/5">
+            <div className="space-y-2">
               {previewComments.map((comment) => (
-                <div key={comment.id} className="flex items-start gap-2">
+                <div key={comment.id} className="flex items-start gap-2.5">
                   <Avatar person={comment.user} sizeClass="h-6 w-6" textClass="text-[9px]" />
-                  <div className="min-w-0 flex-1 rounded-lg bg-slate-100 dark:bg-white/5 px-2.5 py-1.5 border border-slate-200/40 dark:border-white/5">
-                    <p className="truncate text-[11px] font-bold text-slate-800 dark:text-white">
+                  <div className="min-w-0 flex-1 rounded-2xl bg-white dark:bg-white/5 px-3 py-2 border border-slate-200/50 dark:border-white/5 shadow-2xs">
+                    <p className="truncate text-xs font-bold text-slate-900 dark:text-white">
                       {comment.user?.name || "Someone"}
                     </p>
-                    <p className="mt-0.5 text-[11px] leading-4 text-slate-600 dark:text-slate-300 truncate">
+                    <p className="mt-0.5 text-xs font-primary leading-relaxed text-slate-600 dark:text-slate-300">
                       {comment.comment}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
+            {comments.length > 2 && (
+              <button
+                type="button"
+                onClick={() => onOpenDetail(post)}
+                className="text-[11px] font-bold font-primary text-secondary dark:text-accent hover:underline pt-1 block"
+              >
+                មើលមតិទាំងអស់ ({comments.length})...
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -844,16 +886,55 @@ const Blogpage = () => {
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_380px] items-start">
           
           <div className="space-y-8​  ">
-            <section className="flex items-center sticky  justify-between gap-4 rounded-xl border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] px-4 py-3.5 shadow-xs">
-              <div className="flex min-w-0 items-center gap-3">
-                <Avatar person={user} sizeClass="h-9 w-9" textClass="text-xs" />
-                <h1 className="truncate font-primary text-sm font-bold text-slate-800 dark:text-white">
-                  {user ? `សួរស្តី! ${user.name}` : "សូមស្វាគមន៍!"}
-                </h1>
+            {/* Modern Create Post Bar */}
+            <section className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111522] p-4 sm:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35)] transition-all">
+              <div className="flex items-center gap-3">
+                <Avatar person={user} sizeClass="h-10 w-10" textClass="text-xs" />
+                <button
+                  type="button"
+                  onClick={() => (user ? openCreateComposer() : requireLogin())}
+                  className="flex-1 text-left rounded-full bg-slate-100/90 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 border border-slate-200/60 dark:border-white/5 px-5 py-3 text-xs sm:text-sm font-primary text-slate-500 dark:text-slate-400 transition cursor-pointer"
+                >
+                  {user ? `តើអ្នកចង់ចែករំលែកអ្វីថ្ងៃនេះ, ${user.name}?` : "សូមចូលគណនី ដើម្បីចែករំលែក..."}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (user ? openCreateComposer() : requireLogin())}
+                  className="inline-flex items-center gap-2 rounded-xl bg-secondary hover:bg-secondary/90 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:scale-105 active:scale-95 cursor-pointer font-primary shrink-0"
+                >
+                  <i className="fa-solid fa-pen-to-square" />
+                  <span className="hidden sm:inline">បង្ហោះសារ</span>
+                </button>
               </div>
-              <div className="flex shrink-0 items-center gap-2​">
-                <button type="button" onClick={() => (user ? openCreateComposer() : requireLogin())} className="font-primary inline-flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-xs font-bold text-white transition hover:opacity-90 cursor-pointer">
-                  <i className="fa-solid fa-pen-to-square" /> បង្ហោះសារ
+
+              <div className="mt-3.5 flex items-center justify-around border-t border-slate-100 dark:border-white/5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user) { requireLogin(); return; }
+                    openCreateComposer();
+                    setTimeout(() => fileInputRef.current?.click(), 100);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer font-primary"
+                >
+                  <i className="fa-regular fa-image text-emerald-500 text-sm" />
+                  <span>រូបភាព</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/library")}
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer font-primary"
+                >
+                  <i className="fa-solid fa-book-open text-blue-500 text-sm" />
+                  <span>បណ្ណាល័យ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event("open-ai-chat"))}
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer font-primary"
+                >
+                  <i className="fa-solid fa-robot text-accent text-sm" />
+                  <span>ជំនួយការ AI</span>
                 </button>
               </div>
             </section>
@@ -907,7 +988,99 @@ const Blogpage = () => {
               )}
             </section>
           </div>
-          
+
+          {/* Right Sidebar */}
+          <aside className="hidden xl:block space-y-6 sticky top-28">
+            {/* Quick Navigation Card */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#111522] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35)]">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+                <h3 className="font-primary text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i className="fa-solid fa-compass text-secondary dark:text-accent" />
+                  <span>រុករក LibreShelf</span>
+                </h3>
+              </div>
+              <ul className="mt-4 space-y-2">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/library")}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left transition group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                        <i className="fa-solid fa-book text-sm" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold font-primary text-slate-800 dark:text-white group-hover:text-secondary dark:group-hover:text-accent transition">
+                          បណ្ណាល័យសៀវភៅ
+                        </p>
+                        <p className="text-[10px] text-slate-400">ស្វែងរកសៀវភៅល្អៗ</p>
+                      </div>
+                    </div>
+                    <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/favorites")}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left transition group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+                        <i className="fa-solid fa-heart text-sm" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold font-primary text-slate-800 dark:text-white group-hover:text-secondary dark:group-hover:text-accent transition">
+                          សៀវភៅចូលចិត្ត
+                        </p>
+                        <p className="text-[10px] text-slate-400">បញ្ជីដែលបានរក្សាទុក</p>
+                      </div>
+                    </div>
+                    <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event("open-ai-chat"))}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-left transition group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-accent">
+                        <i className="fa-solid fa-robot text-sm" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold font-primary text-slate-800 dark:text-white group-hover:text-secondary dark:group-hover:text-accent transition">
+                          Reach Assistant AI
+                        </p>
+                        <p className="text-[10px] text-slate-400">ជំនួយការឆ្លាតវៃ</p>
+                      </div>
+                    </div>
+                    <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Community Inspiration Box */}
+            <div className="rounded-2xl border border-secondary/20 dark:border-accent/20 bg-gradient-to-br from-secondary/5 via-primary/5 to-accent/5 p-5">
+              <div className="flex items-center gap-2 text-xs font-bold text-secondary dark:text-accent font-primary">
+                <i className="fa-solid fa-lightbulb" />
+                <span>គន្លឹះចែករំលែក</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed font-primary text-slate-600 dark:text-slate-300">
+                ចែករំលែកសៀវភៅល្អៗ លំហាត់ ឬគំនិតរបស់អ្នក ដើម្បីជួយដល់សិស្សនិស្សិតក្នុងសហគមន៍ LibreShelf ទាំងអស់គ្នា!
+              </p>
+              <button
+                type="button"
+                onClick={() => (user ? openCreateComposer() : requireLogin())}
+                className="mt-4 w-full rounded-xl bg-gradient-to-r from-secondary to-primary px-4 py-2.5 text-xs font-bold font-primary text-white shadow-xs hover:opacity-95 transition cursor-pointer"
+              >
+                សរសេរបង្ហោះសារឥឡូវនេះ
+              </button>
+            </div>
+          </aside>
         </div>
       </section>
 

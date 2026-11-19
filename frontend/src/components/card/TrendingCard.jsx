@@ -130,7 +130,7 @@ const TrendingCard = () => {
           <h2 className="font-primary text-2xl font-semibold text-primary dark:text-white sm:text-3xl">
             សៀវភៅដែលមានក្នុងបណ្ណាល័យ
           </h2>
-          <hr className="my-2 h-1 w-100 border-0 bg-primary dark:bg-accent" />
+          <hr className="my-2 h-1 w-24 rounded-full border-0 bg-primary dark:bg-accent" />
         </div>
 
         {error ? (

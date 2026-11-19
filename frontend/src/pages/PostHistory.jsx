@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { getStorageUrl } from "../api/api";
 
 const tabs = [
   { id: "posts", label: "Posts", icon: "fa-pen-to-square" },
@@ -15,9 +16,12 @@ const HistoryCard = ({ title, subtitle, meta, href, badge, image, actionLabel })
           <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800">
             {image ? (
               <img
-                src={image}
+                src={getStorageUrl(image) || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80"}
                 alt={title}
                 className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80";
+                }}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400 dark:from-slate-800 dark:to-slate-700">
@@ -142,6 +146,7 @@ const PostHistory = ({
             {posts.map((post) => (
               <HistoryCard
                 key={post.id}
+                href={`/post/${post.id}`}
                 title={post.content?.slice(0, 42) || "Post"}
                 subtitle={post.content || "Shared post"}
                 meta={`${post.comments_count ?? 0} comments · ${post.likes_count ?? 0} likes`}

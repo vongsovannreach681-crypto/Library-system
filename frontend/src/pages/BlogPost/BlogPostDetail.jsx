@@ -102,6 +102,15 @@ const BlogPostDetail = () => {
   const [authToken, setAuthToken] = useState(
     () => localStorage.getItem("auth_token") || "",
   );
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token") || "";
@@ -413,18 +422,16 @@ const BlogPostDetail = () => {
               </div>
             </div>
 
-            {mediaSrc ? (
-              <img
-                src={getStorageUrl(mediaSrc)}
-                alt="Blog post attachment"
-                className="max-h-[460px] w-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="flex h-[300px] items-center justify-center bg-slate-50 dark:bg-white/5">
-                <i className="fa-regular fa-image text-5xl text-slate-300 dark:text-slate-600" />
+            {mediaSrc && (
+              <div className="overflow-hidden border-b border-slate-100 bg-slate-900/5 dark:border-white/10 dark:bg-black/20">
+                <img
+                  src={getStorageUrl(mediaSrc)}
+                  alt="Blog post attachment"
+                  className="max-h-[520px] w-full object-cover transition-transform duration-500 hover:scale-[1.01]"
+                  onError={(e) => {
+                    e.currentTarget.parentElement.style.display = "none";
+                  }}
+                />
               </div>
             )}
 
@@ -453,6 +460,14 @@ const BlogPostDetail = () => {
                 >
                   <i className={`fa-${post.liked_by_me ? "solid" : "regular"} fa-thumbs-up`} />
                   {post.liked_by_me ? "Liked" : "Like"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 cursor-pointer"
+                >
+                  <i className={`fa-solid ${copied ? "fa-check text-emerald-500" : "fa-share-nodes text-slate-400"}`} />
+                  <span>{copied ? "បានចម្លង!" : "ចែករំលែក"}</span>
                 </button>
                 <span className="text-sm text-slate-500 dark:text-slate-400">
                   {formatCount(comments.length)} comments
@@ -579,14 +594,43 @@ const BlogPostDetail = () => {
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#11151f]">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary dark:text-sky-300">
-                Quick note
+            <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#11151f]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary dark:text-accent font-primary">
+                រុករក LibreShelf
               </p>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                This layout keeps the content front and center, with metadata and
-                discussion kept quiet and easy to scan.
-              </p>
+              <div className="mt-4 space-y-2">
+                <Link
+                  to="/library"
+                  className="flex items-center justify-between rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-white/5 group"
+                >
+                  <span className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-secondary dark:group-hover:text-accent font-primary">
+                    <i className="fa-solid fa-book-open text-blue-500" />
+                    បណ្ណាល័យសៀវភៅ
+                  </span>
+                  <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <Link
+                  to="/favorites"
+                  className="flex items-center justify-between rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-white/5 group"
+                >
+                  <span className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-secondary dark:group-hover:text-accent font-primary">
+                    <i className="fa-solid fa-heart text-red-500" />
+                    សៀវភៅចូលចិត្ត
+                  </span>
+                  <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event("open-ai-chat"))}
+                  className="w-full flex items-center justify-between rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-white/5 group cursor-pointer text-left"
+                >
+                  <span className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 group-hover:text-secondary dark:group-hover:text-accent font-primary">
+                    <i className="fa-solid fa-robot text-amber-500" />
+                    Reach Assistant AI
+                  </span>
+                  <i className="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
             </section>
           </aside>
         </div>

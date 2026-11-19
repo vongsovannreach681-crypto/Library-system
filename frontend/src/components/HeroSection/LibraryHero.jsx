@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/api";
+import api, { getStorageUrl } from "../../api/api";
 import book1 from "../../assets/Book/Static1.PNG";
 import book2 from "../../assets/Book/Static2.jpg";
 import book3 from "../../assets/Book/Static3.jpg";
@@ -155,9 +155,12 @@ const LibraryHero = () => {
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-primary/5"
                       >
                         <img
-                          src={book.cover_image}
+                          src={getStorageUrl(book.cover_image) || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80"}
                           alt={book.title}
                           className="h-14 w-10 flex-shrink-0 rounded-md object-cover shadow"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80";
+                          }}
                         />
                         <div className="min-w-0">
                           <p className="font-primary truncate text-sm font-semibold text-text-black">

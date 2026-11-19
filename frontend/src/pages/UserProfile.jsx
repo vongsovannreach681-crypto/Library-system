@@ -6,7 +6,7 @@ import PostHistory from "./PostHistory";
 
 const getProfileImage = (person) =>
   getStorageUrl(person?.profile_url || person?.profile) ||
-  "https://via.placeholder.com/300";
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(person?.name || "User")}&background=0D8ABC&color=fff`;
 
 const normalizePost = (post) => ({
   ...post,
@@ -221,10 +221,10 @@ const UserProfile = () => {
 
   return (
     <>
-      <div className="fixed z-3 top-0 left-0 right-0">
+      <div className="fixed z-50 top-0 left-0 right-0">
         <Header />
       </div>
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-2 sm:px-6 lg:px-8">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-12 pt-24 sm:px-6 lg:px-8">
         <section className="w-full">
           {/* Profile Card */}
           <div className="bg-white dark:bg-slate-800 shadowCus borderCus rounded-2xl overflow-hidden">
@@ -254,18 +254,21 @@ const UserProfile = () => {
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 sm:-mt-14">
                 <div className="flex flex-col align-middle sm:flex-row sm:items-end gap-4">
                   {/* Avatar */}
-                  <div className="relative w-50 h-50 shrink-0">
+                  <div className="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0">
                     <img
                       src={avatarSrc}
                       alt={user.name}
-                      className="w-50 h-50 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg bg-gray-100"
+                      className="w-32 h-32 sm:w-36 sm:h-36 rounded-full object-cover border-4 border-white dark:border-slate-800 shadow-lg bg-gray-100"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=0D8ABC&color=fff`;
+                      }}
                     />
                     {isEditing && (
                       <label className="absolute bottom-1 right-1 cursor-pointer bg-accent hover:bg-secondary text-white p-2 rounded-full shadow-md transition-colors">
                         <i className="ph-bold ph-camera text-sm" />
                         <input
                           type="file"
-                          accept="image/"
+                          accept="image/*"
                           onChange={handleProfileChange}
                           className="hidden"
                         />

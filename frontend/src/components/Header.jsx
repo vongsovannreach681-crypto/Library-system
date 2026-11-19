@@ -182,20 +182,20 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-nav flex items-center justify-between px-4 py-2 md:px-6 lg:px-8">
-        <div className="flex flex-shrink-0 items-center">
-          <img className="h-auto w-20 md:w-24" src={logo} alt="Logo" />
-        </div>
+      <header className="bg-nav/95 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 py-2 md:px-6 lg:px-8 shadow-md border-b border-white/5 transition-all">
+        <Link to="/" className="flex flex-shrink-0 items-center transition hover:opacity-90">
+          <img className="h-auto w-20 md:w-24 object-contain" src={logo} alt="Logo" />
+        </Link>
 
         <nav className="hidden gap-5 lg:gap-8 md:flex">
           {navLinks.map((link, index) => (
-            <a
+            <Link
               key={index}
-              className="font-primary text-lg font-semibold text-white transition-colors duration-200 hover:text-accent lg:text-xl"
-              href={link.href}
+              className="font-primary text-base font-semibold text-white/90 transition-all duration-200 hover:text-accent lg:text-lg hover:-translate-y-0.5"
+              to={link.href || "/"}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
