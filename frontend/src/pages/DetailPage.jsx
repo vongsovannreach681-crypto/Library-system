@@ -15,6 +15,7 @@ const DetailPage = () => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [viewerMode, setViewerMode] = useState("direct");
 
   useEffect(() => {
     const loadBook = async () => {
@@ -107,6 +108,11 @@ const DetailPage = () => {
       </div>
     );
   }
+
+  const pdfUrl = getStorageUrl(book?.pdf_file);
+  const googleViewerUrl = pdfUrl
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`
+    : null;
 
   return (
     <>
@@ -207,17 +213,23 @@ const DetailPage = () => {
 
                 {/* Action CTA Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3 sm:gap-4 w-full">
-                  <a
-                    id="download-btn"
-                    download={book.title ? `${book.title}.pdf` : "book.pdf"}
-                    href={book.pdf_file || "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full sm:w-auto px-6 py-3 font-primary bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base"
-                  >
-                    <i className="ph-bold ph-download-simple text-lg" />{" "}
-                    ទាញយកសៀវភៅ
-                  </a>
+                  {pdfUrl ? (
+                    <a
+                      id="download-btn"
+                      download={book.title ? `${book.title}.pdf` : "book.pdf"}
+                      href={pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full sm:w-auto px-6 py-3 font-primary bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base"
+                    >
+                      <i className="ph-bold ph-download-simple text-lg" />{" "}
+                      ទាញយកសៀវភៅ
+                    </a>
+                  ) : (
+                    <span className="w-full sm:w-auto px-6 py-3 font-primary bg-white/20 text-white/70 font-bold rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base cursor-not-allowed">
+                      <i className="ph-bold ph-file-x text-lg" /> មិនមាន PDF ទេ
+                    </span>
+                  )}
 
                   <button
                     id="favorite-btn"
@@ -292,19 +304,69 @@ const DetailPage = () => {
                 className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-slate-700"
               >
                 {/* Header Bar */}
-                <div className="bg-gradient-to-r from-primary to-primary/90 px-4 sm:px-6 py-3.5 sm:py-4 flex justify-between items-center">
-                  <h3 className="font-bold text-white flex items-center gap-2.5 font-primary text-base sm:text-lg">
-                    <i className="ph-fill ph-book-open-text text-lg sm:text-xl"></i>
-                    មើលឯកសារ
-                  </h3>
-                  <button
-                    id="fullscreen-btn"
-                    onClick={handleToggleFullscreen}
-                    className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 text-white/90 hover:text-white"
-                    title="Toggle Fullscreen"
-                  >
-                    <i className="ph-bold ph-corners-out text-lg sm:text-xl"></i>
-                  </button>
+                <div className="bg-gradient-to-r from-primary to-primary/90 px-4 sm:px-6 py-3.5 sm:py-4 flex flex-wrap justify-between items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-bold text-white flex items-center gap-2.5 font-primary text-base sm:text-lg">
+                      <i className="ph-fill ph-book-open-text text-lg sm:text-xl text-accent"></i>
+                      មើលឯកសារ
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white">
+                      PDF
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {pdfUrl && (
+                      <div className="inline-flex rounded-lg bg-white/10 p-0.5 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setViewerMode("direct")}
+                          className={`px-2.5 py-1 rounded-md font-primary transition ${
+                            viewerMode === "direct"
+                              ? "bg-white text-primary font-bold shadow-sm"
+                              : "text-white/80 hover:text-white"
+                          }`}
+                          title="Direct PDF Viewer"
+                        >
+                          មើលផ្ទាល់
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setViewerMode("google")}
+                          className={`px-2.5 py-1 rounded-md font-primary transition ${
+                            viewerMode === "google"
+                              ? "bg-white text-primary font-bold shadow-sm"
+                              : "text-white/80 hover:text-white"
+                          }`}
+                          title="Google Docs Viewer"
+                        >
+                          Google Viewer
+                        </button>
+                      </div>
+                    )}
+
+                    {pdfUrl && (
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 hover:bg-white/20 rounded-lg transition text-white/90 hover:text-white flex items-center gap-1 text-xs sm:text-sm font-primary"
+                        title="បើកក្នុងផ្ទាំងថ្មី"
+                      >
+                        <i className="ph-bold ph-arrow-square-out text-base sm:text-lg"></i>
+                        <span className="hidden sm:inline">ផ្ទាំងថ្មី</span>
+                      </a>
+                    )}
+
+                    <button
+                      id="fullscreen-btn"
+                      onClick={handleToggleFullscreen}
+                      className="p-2 hover:bg-white/20 rounded-lg transition-all duration-200 text-white/90 hover:text-white"
+                      title="Toggle Fullscreen"
+                    >
+                      <i className="ph-bold ph-corners-out text-lg sm:text-xl"></i>
+                    </button>
+                  </div>
                 </div>
 
                 {/* PDF Container Viewport */}
@@ -312,13 +374,14 @@ const DetailPage = () => {
                   id="pdf-container"
                   className="bg-gray-50 dark:bg-slate-700 p-2 sm:p-4 h-[450px] sm:h-[650px] lg:h-[800px] flex flex-col group"
                 >
-                  {book.pdf_file ? (
+                  {pdfUrl ? (
                     <iframe
                       id="pdf-viewer"
-                      src={book.pdf_file}
+                      src={viewerMode === "google" ? googleViewerUrl : pdfUrl}
                       title={book.title || "PDF Document"}
                       className="w-full flex-1 rounded-xl bg-white shadow-inner border border-gray-200 dark:border-slate-600"
                       frameBorder="0"
+                      allow="fullscreen"
                     />
                   ) : (
                     <div
@@ -327,10 +390,10 @@ const DetailPage = () => {
                     >
                       <i className="ph-duotone ph-file-x text-5xl sm:text-6xl text-gray-300 dark:text-gray-500 mb-3"></i>
                       <p className="text-gray-600 dark:text-gray-300 font-primary text-sm sm:text-base mb-1">
-                        មិនអាចមើលឯកសារបានទេ
+                        មិនមានឯកសារ PDF សម្រាប់សៀវភៅនេះទេ
                       </p>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-4 font-primary">
-                        សូមព្យាយាមទាញយកឯកសារដើម្បីអានវា
+                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-primary">
+                        សូមអធ្យាស្រ័យ ឯកសារមិនទាន់ត្រូវបានបញ្ចូលនៅឡើយ
                       </p>
                     </div>
                   )}
@@ -340,18 +403,35 @@ const DetailPage = () => {
                 <div className="bg-gray-50 dark:bg-slate-700 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-slate-600 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-xs sm:text-sm font-primary">
                     <i className="ph-fill ph-file-pdf text-base sm:text-lg text-red-500"></i>
-                    <span>ឯកសារ PDF</span>
+                    <span>
+                      {pdfUrl
+                        ? "ប្រសិនបើឯកសារមិនបង្ហាញ សូមចុច 'ផ្ទាំងថ្មី' ឬប្ដូរទៅ 'Google Viewer'"
+                        : "គ្មានឯកសារ"}
+                    </span>
                   </div>
-                  <a
-                    href={book.pdf_file || "#"}
-                    download={book.title ? `${book.title}.pdf` : "book.pdf"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent hover:text-accent/80 transition font-primary text-xs sm:text-sm font-semibold flex items-center gap-1"
-                  >
-                    <i className="ph-bold ph-download-simple"></i>
-                    ទាញយកឯកសារ
-                  </a>
+                  {pdfUrl && (
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-white transition font-primary text-xs sm:text-sm font-semibold flex items-center gap-1"
+                      >
+                        <i className="ph-bold ph-arrow-square-out"></i>
+                        បើកមើលផ្ទាល់
+                      </a>
+                      <a
+                        href={pdfUrl}
+                        download={book.title ? `${book.title}.pdf` : "book.pdf"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent hover:text-accent/80 transition font-primary text-xs sm:text-sm font-semibold flex items-center gap-1"
+                      >
+                        <i className="ph-bold ph-download-simple"></i>
+                        ទាញយកឯកសារ
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

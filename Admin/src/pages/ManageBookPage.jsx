@@ -20,7 +20,9 @@ const ManageBookPage = () => {
       return fileUrl;
     }
 
-    return `${apiOrigin}${fileUrl}`;
+    const cleanPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+    const withStorage = cleanPath.startsWith("/storage") ? cleanPath : `/storage${cleanPath}`;
+    return `${apiOrigin}${withStorage}`;
   };
 
   useEffect(() => {

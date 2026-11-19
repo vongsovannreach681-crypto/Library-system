@@ -59,7 +59,9 @@ const FavoritesPage = () => {
     event.preventDefault();
     event.stopPropagation();
     if (!book?.pdf_file) return;
-    window.open(book.pdf_file, "_blank", "noreferrer");
+    const url = getStorageUrl(book.pdf_file);
+    if (!url) return;
+    window.open(url, "_blank", "noreferrer");
   };
 
   const filteredFavorites = useMemo(() => {

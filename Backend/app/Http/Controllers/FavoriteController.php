@@ -64,9 +64,19 @@ class FavoriteController extends Controller
 
     private function formatBookResponse(Books $book): array
     {
-        $baseUrl = request()->getSchemeAndHttpHost();
-        $coverUrl = $book->cover_image ? $baseUrl . '/storage/' . ltrim($book->cover_image, '/') : null;
-        $pdfUrl = $book->pdf_file ? $baseUrl . '/storage/' . ltrim($book->pdf_file, '/') : null;
+        $coverUrl = null;
+        if ($book->cover_image) {
+            $coverUrl = \Illuminate\Support\Str::startsWith($book->cover_image, ['http://', 'https://'])
+                ? $book->cover_image
+                : asset('storage/' . ltrim($book->cover_image, '/'));
+        }
+
+        $pdfUrl = null;
+        if ($book->pdf_file) {
+            $pdfUrl = \Illuminate\Support\Str::startsWith($book->pdf_file, ['http://', 'https://'])
+                ? $book->pdf_file
+                : asset('storage/' . ltrim($book->pdf_file, '/'));
+        }
 
         return [
             'id' => $book->id,
