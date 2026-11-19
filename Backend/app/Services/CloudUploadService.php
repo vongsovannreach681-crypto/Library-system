@@ -32,14 +32,15 @@ class CloudUploadService
         }
 
         // 2. Check for Cloudinary configuration
-        $cloudinaryUrl = env('CLOUDINARY_URL');
+        $rawCloudinaryUrl = env('CLOUDINARY_URL', 'cloudinary://561445241888493:6filZaA54OQql93hU9EyrqwhQO8@gkabrska');
         $cloudName = env('CLOUDINARY_CLOUD_NAME');
         $apiKey = env('CLOUDINARY_API_KEY');
         $apiSecret = env('CLOUDINARY_API_SECRET');
         $uploadPreset = env('CLOUDINARY_UPLOAD_PRESET');
 
-        if ($cloudinaryUrl) {
-            $parsed = parse_url($cloudinaryUrl);
+        if ($rawCloudinaryUrl) {
+            $cleanUrl = preg_replace('/^(CLOUDINARY_URL=)+/i', '', trim($rawCloudinaryUrl));
+            $parsed = parse_url($cleanUrl);
             if (!empty($parsed['host'])) {
                 $cloudName = $parsed['host'];
             }
@@ -50,6 +51,10 @@ class CloudUploadService
                 $apiSecret = $parsed['pass'];
             }
         }
+
+        $cloudName = $cloudName ?: env('CLOUDINARY_CLOUD_NAME', 'gkabrska');
+        $apiKey = $apiKey ?: env('CLOUDINARY_API_KEY', '561445241888493');
+        $apiSecret = $apiSecret ?: env('CLOUDINARY_API_SECRET', '6filZaA54OQql93hU9EyrqwhQO8');
 
         if ($cloudName) {
             try {

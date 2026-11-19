@@ -18,6 +18,15 @@ fi
 # Ensure SESSION_DRIVER is file (not database) to avoid dependency on database sessions table
 sed -i "s|^SESSION_DRIVER=.*|SESSION_DRIVER=file|" /var/www/html/.env 2>/dev/null || true
 
+# Synchronize Cloudinary credentials
+CLOUDINARY_URL="${CLOUDINARY_URL:-cloudinary://561445241888493:6filZaA54OQql93hU9EyrqwhQO8@gkabrska}"
+echo "===> Setting up Cloudinary permanent storage..."
+if grep -q "^CLOUDINARY_URL=" /var/www/html/.env; then
+    sed -i "s|^CLOUDINARY_URL=.*|CLOUDINARY_URL=${CLOUDINARY_URL}|" /var/www/html/.env
+else
+    echo "CLOUDINARY_URL=${CLOUDINARY_URL}" >> /var/www/html/.env
+fi
+
 # Synchronize or generate APP_KEY
 if [ -n "$APP_KEY" ]; then
     echo "===> Syncing APP_KEY from environment..."
