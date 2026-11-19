@@ -182,13 +182,7 @@ class BooksController extends Controller
 
     private function uploadFile($file, string $folder, ?string $currentPath = null): string
     {
-        if ($currentPath && Storage::disk('public')->exists($currentPath)) {
-            Storage::disk('public')->delete($currentPath);
-        }
-
-        $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-
-        return $file->storeAs($folder, $fileName, 'public');
+        return \App\Services\CloudUploadService::upload($file, $folder, $currentPath);
     }
 
     private function formatBookResponse(Books $book): array

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api/api";
+import api, { getStorageUrl } from "../../api/api";
 import { Link, useNavigate } from "react-router-dom";
 
 const TrendingCard = () => {
@@ -72,9 +72,12 @@ const TrendingCard = () => {
           <div className="w-full overflow-hidden rounded-xl sm:w-36">
             <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gray-100 dark:bg-slate-800">
               <img
-                src={item.cover_image}
+                src={getStorageUrl(item.cover_image) || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80"}
                 alt={item.title}
                 className="h-full w-full object-cover transition duration-500 hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80";
+                }}
               />
             </div>
           </div>

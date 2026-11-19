@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/api";
+import api, { getStorageUrl } from "../../api/api";
 import BlogHero from "../../components/HeroSection/BlogHero";
 
 const formatCount = (value = 0) => {
@@ -50,15 +50,21 @@ const normalizePost = (post) => ({
 });
 
 const Avatar = ({ person, sizeClass = "h-9 w-9", textClass = "text-xs" }) => {
-  const imageSrc = person?.profile_url || person?.profile || null;
+  const imageSrc = getStorageUrl(person?.profile_url || person?.profile);
   const name = person?.name || "User";
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div
-      className={`${sizeClass} shrink-0 overflow-hidden rounded-full border-2 border-white dark:border-slate-800 bg-gradient-to-br from-primary to-secondary text-white shadow-sm`}
+      className={`${sizeClass} shrink-0 overflow-hidden rounded-full border-2 border-white dark:border-slate-800 bg-gradient-to-br from-primary to-secondary text-white shadow-sm flex items-center justify-center`}
     >
-      {imageSrc ? (
-        <img src={imageSrc} alt={name} className="h-full w-full object-cover" />
+      {imageSrc && !imgError ? (
+        <img
+          src={imageSrc}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setImgError(true)}
+        />
       ) : (
         <div className={`flex h-full w-full items-center justify-center font-bold ${textClass}`}>
           {getInitials(name)}
@@ -182,7 +188,14 @@ const PostDetailModal = ({
           {/* Image */}
           {mediaSrc && (
             <div className="w-full max-h-[300px] overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
-              <img src={mediaSrc} alt="Post" className="w-full h-full object-cover" />
+              <img
+                src={getStorageUrl(mediaSrc)}
+                alt="Post"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
             </div>
           )}
 
@@ -305,7 +318,8 @@ const PostCard = ({
   onOpenDetail,
   onCommentSubmit,
 }) => {
-  const mediaSrc = post.image_url || post.image || null;
+  const mediaSrc = getStorageUrl(post.image_url || post.image);
+  const [imageFailed, setImageFailed] = useState(false);
   const comments = post.comments || [];
   const previewComments = comments.slice(0, 2);
 
@@ -346,13 +360,20 @@ const PostCard = ({
         className="cursor-pointer"
         onClick={() => onOpenDetail(post)}
       >
-        {mediaSrc ? (
+        {mediaSrc && !imageFailed ? (
           <div className="h-[220px] w-full overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
-            <img src={mediaSrc} alt="Post attachment" className="h-full w-full object-cover" loading="lazy" />
+            <img
+              src={mediaSrc}
+              alt="Post attachment"
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={() => setImageFailed(true)}
+            />
           </div>
         ) : (
-          <div className="h-[220px] w-full flex items-center justify-center bg-slate-100 dark:bg-[#161c2c]/40 border-b border-slate-200/40 dark:border-white/5 text-slate-400">
+          <div className="h-[220px] w-full flex flex-col items-center justify-center bg-slate-100 dark:bg-[#161c2c]/40 border-b border-slate-200/40 dark:border-white/5 text-slate-400 gap-1.5">
             <i className="fa-regular fa-image text-3xl opacity-30" />
+            <span className="text-[10px] opacity-40 font-primary">គ្មានរូបភាព</span>
           </div>
         )}
       </div>

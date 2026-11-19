@@ -61,8 +61,14 @@ if [ "$DB_CONNECTION" = "sqlite" ] || ([ -z "$DB_CONNECTION" ] && [ -z "$DATABAS
     chown -R www-data:www-data /var/www/html/database
 fi
 
-# Create storage symlink
+# Synchronize APP_URL with Render external URL if available
+TARGET_APP_URL="${RENDER_EXTERNAL_URL:-${APP_URL:-https://library-system-1-plb3.onrender.com}}"
+echo "===> Setting APP_URL to ${TARGET_APP_URL}..."
+sed -i "s|^APP_URL=.*|APP_URL=${TARGET_APP_URL}|" /var/www/html/.env 2>/dev/null || true
+
+# Re-link storage cleanly
 echo "===> Linking storage..."
+rm -rf /var/www/html/public/storage
 php artisan storage:link --force || true
 
 # Run database migrations

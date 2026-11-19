@@ -33,4 +33,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const getStorageUrl = (path) => {
+  if (!path) return null;
+  const apiOrigin = new URL(api.defaults.baseURL).origin;
+
+  if (typeof path === "string") {
+    // If it references localhost from local dev, fix it to use the production backend
+    if (path.includes("localhost:8000") || path.includes("127.0.0.1:8000")) {
+      return path.replace(/https?:\/\/(localhost|127\.0\.0\.1):8000/, apiOrigin);
+    }
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    const withStorage = cleanPath.startsWith("/storage") ? cleanPath : `/storage${cleanPath}`;
+    return `${apiOrigin}${withStorage}`;
+  }
+  return path;
+};
+
 export default api;

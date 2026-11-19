@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import logo from "../assets/NobgLogo.png";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import api, { getStorageUrl } from "../api/api";
 
 const navLinks = [
   { label: "ប្លុកវេទីការ", href: "/" },
@@ -241,12 +241,14 @@ const Header = () => {
               >
                 <img
                   src={
-                    user.profile
-                      ? `http://localhost:8000/storage/${user.profile}`
-                      : "https://i.pinimg.com/1200x/2c/47/d5/2c47d5dd5b532f83bb55c4cd6f5bd1ef.jpg"
+                    getStorageUrl(user.profile_url || user.profile) ||
+                    "https://i.pinimg.com/1200x/2c/47/d5/2c47d5dd5b532f83bb55c4cd6f5bd1ef.jpg"
                   }
                   alt={user.name}
                   className="h-10 w-10 rounded-full border-2 border-accent object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://i.pinimg.com/1200x/2c/47/d5/2c47d5dd5b532f83bb55c4cd6f5bd1ef.jpg";
+                  }}
                 />
                 <span className="font-primary text-sm font-semibold text-white lg:text-base">
                   {user.name}
@@ -358,12 +360,14 @@ const Header = () => {
                   <div className="mb-2 flex items-center gap-2">
                     <img
                       src={
-                        user.profile
-                          ? `http://localhost:8000/storage/${user.profile}`
-                          : "https://via.placeholder.com/40"
+                        getStorageUrl(user.profile_url || user.profile) ||
+                        "https://via.placeholder.com/40"
                       }
                       alt={user.name}
                       className="h-8 w-8 rounded-full border-2 border-accent object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://via.placeholder.com/40";
+                      }}
                     />
                     <div>
                       <p className="font-primary text-sm font-semibold text-white">

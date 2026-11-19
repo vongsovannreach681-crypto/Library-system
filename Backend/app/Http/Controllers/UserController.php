@@ -49,13 +49,7 @@ class UserController extends Controller
         $user->phone = $request->phone;
 
         if ($request->hasFile('profile')) {
-            // Delete old profile picture if it exists
-            if ($user->profile && Storage::disk('public')->exists($user->profile)) {
-                Storage::disk('public')->delete($user->profile);
-            }
-            // Store new profile picture
-            $profilePath = $request->file('profile')->store('profiles', 'public');
-            $user->profile = $profilePath;
+            $user->profile = \App\Services\CloudUploadService::upload($request->file('profile'), 'profiles', $user->profile);
         }
 
         $user->save();

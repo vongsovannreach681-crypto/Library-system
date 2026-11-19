@@ -43,7 +43,7 @@ class PostController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('posts', 'public');
+            $imagePath = \App\Services\CloudUploadService::upload($request->file('image'), 'posts');
         }
 
         $post = Post::create([
@@ -95,11 +95,7 @@ class PostController extends Controller
 
         if ($request->hasFile('image')) {
             $currentImagePath = $post->getRawOriginal('image_url');
-            if ($currentImagePath && Storage::disk('public')->exists($currentImagePath)) {
-                Storage::disk('public')->delete($currentImagePath);
-            }
-
-            $post->image_url = $request->file('image')->store('posts', 'public');
+            $post->image_url = \App\Services\CloudUploadService::upload($request->file('image'), 'posts', $currentImagePath);
         }
 
         $post->save();

@@ -36,7 +36,15 @@ class Post extends Model
     {
         $path = $this->attributes['image_url'] ?? null;
 
-        return $path ? asset('storage/' . ltrim($path, '/')) : null;
+        if (!$path) {
+            return null;
+        }
+
+        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
     }
 
     public function getImageAttribute(): ?string

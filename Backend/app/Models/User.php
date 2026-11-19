@@ -28,10 +28,17 @@ class User extends Authenticatable
 
     // protect
     protected $appends = ['profile_url'];
-    // upload profile image and get the url
-    public function getProfileUrlAttribute()
+    public function getProfileUrlAttribute(): ?string
     {
-        return $this->profile ? asset('storage/' . $this->profile) : null;
+        if (!$this->profile) {
+            return null;
+        }
+
+        if (\Illuminate\Support\Str::startsWith($this->profile, ['http://', 'https://'])) {
+            return $this->profile;
+        }
+
+        return asset('storage/' . ltrim($this->profile, '/'));
     }
 
     protected $fillable = [

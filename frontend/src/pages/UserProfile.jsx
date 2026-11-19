@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/api";
+import api, { getStorageUrl } from "../api/api";
 import Header from "../components/Header";
 import PostHistory from "./PostHistory";
 
 const getProfileImage = (person) =>
-  person?.profile_url ||
-  (person?.profile ? `http://localhost:8000/storage/${person.profile}` : "https://via.placeholder.com/300");
+  getStorageUrl(person?.profile_url || person?.profile) ||
+  "https://via.placeholder.com/300";
 
 const normalizePost = (post) => ({
   ...post,
@@ -535,9 +535,12 @@ const UserProfile = () => {
                   {userPosts[0].image_url && (
                     <div className="mt-4 overflow-hidden rounded-xl">
                       <img
-                        src={userPosts[0].image_url}
+                        src={getStorageUrl(userPosts[0].image_url)}
                         alt="Post attachment"
                         className="max-h-64 w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                     </div>
                   )}

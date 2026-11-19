@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import api from "../api/api";
+import api, { getStorageUrl } from "../api/api";
 import Header from "../components/Header";
 import defaultBookCover from "../assets/Book/Static1.PNG";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -139,9 +139,12 @@ const DetailPage = () => {
               <div className="flex-shrink-0 w-[160px] sm:w-[220px] md:w-[260px] aspect-[2/3] rounded-lg overflow-hidden shadow-2xl border-2 sm:border-4 border-white/10">
                 <img
                   id="book-cover"
-                  src={book.cover_image || defaultBookCover}
+                  src={getStorageUrl(book.cover_image) || defaultBookCover}
                   alt={book.title || "Book Cover"}
                   className="w-full h-full object-cover bg-gray-700"
+                  onError={(e) => {
+                    e.currentTarget.src = defaultBookCover;
+                  }}
                 />
               </div>
 

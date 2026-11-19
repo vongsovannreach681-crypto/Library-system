@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import api from "../../api/api";
+import api, { getStorageUrl } from "../../api/api";
 import Header from "../../components/Header";
 
 const normalizePost = (post) => ({
@@ -50,19 +50,24 @@ const getInitials = (name = "") =>
     .join("") || "U";
 
 const getProfileImage = (person) =>
-  person?.profile_url ||
-  (person?.profile ? `http://localhost:8000/storage/${person.profile}` : "");
+  getStorageUrl(person?.profile_url || person?.profile) || "";
 
 const Avatar = ({ person, sizeClass = "h-10 w-10", textClass = "text-sm" }) => {
   const imageSrc = getProfileImage(person);
   const name = person?.name || "User";
+  const [loadError, setLoadError] = useState(false);
 
   return (
     <div
-      className={`${sizeClass} shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200`}
+      className={`${sizeClass} shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 flex items-center justify-center`}
     >
-      {imageSrc ? (
-        <img src={imageSrc} alt={name} className="h-full w-full object-cover" />
+      {imageSrc && !loadError ? (
+        <img
+          src={imageSrc}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setLoadError(true)}
+        />
       ) : (
         <div className={`flex h-full w-full items-center justify-center font-bold ${textClass}`}>
           {getInitials(name)}
@@ -410,9 +415,12 @@ const BlogPostDetail = () => {
 
             {mediaSrc ? (
               <img
-                src={mediaSrc}
+                src={getStorageUrl(mediaSrc)}
                 alt="Blog post attachment"
                 className="max-h-[460px] w-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
               />
             ) : (
               <div className="flex h-[300px] items-center justify-center bg-slate-50 dark:bg-white/5">
