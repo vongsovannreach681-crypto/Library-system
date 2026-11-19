@@ -157,12 +157,12 @@ const PostDetailModal = ({
   const mediaSrc = post.image_url || post.image || null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto overscroll-contain">
       {/* Backdrop */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative z-10 flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+      <div className="relative z-10 my-auto flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -177,14 +177,14 @@ const PostDetailModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/10"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-white/10 cursor-pointer"
           >
-            <i className="fa-solid fa-xmark" />
+            <i className="fa-solid fa-xmark text-sm" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
           {/* Image */}
           {mediaSrc && (
             <div className="w-full max-h-[300px] overflow-hidden bg-slate-100 dark:bg-[#1a2130]">
@@ -593,87 +593,122 @@ const ComposerModal = ({
   onImageChange,
   onRemoveImage,
 }) => {
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/70 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/70 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto overscroll-contain">
+      {/* Backdrop */}
+      <div className="fixed inset-0" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative z-10 my-auto flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4 shrink-0">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 font-primary">
               {mode === "edit" ? "Edit post" : "Create post"}
             </p>
-            <h2 className="font-primary text-2xl font-bold text-slate-800 dark:text-white">
-              {mode === "edit" ? "Update your post" : "What is on your mind?"}
+            <h2 className="font-primary text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">
+              {mode === "edit" ? "កែប្រែការបង្ហោះ" : "តើអ្នកកំពុងគិតអ្វី?"}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white transition hover:bg-slate-200"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10 cursor-pointer"
           >
-            <i className="fa-solid fa-xmark" />
+            <i className="fa-solid fa-xmark text-sm" />
           </button>
         </div>
 
-        <div className="px-5 py-5">
-          <div className="flex items-start gap-3 mb-4">
-            <Avatar person={user} sizeClass="h-12 w-12" textClass="text-base" />
-            <div className="min-w-0">
-              <h3 className="font-primary text-base font-bold text-slate-800 dark:text-white">
-                {user?.name || "User"}
-              </h3>
-              <p className="text-xs text-slate-400">Share with your followers and community.</p>
+        {/* Scrollable Form Body */}
+        <form onSubmit={onSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 space-y-4" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="flex items-center gap-3">
+              <Avatar person={user} sizeClass="h-11 w-11" textClass="text-sm" />
+              <div className="min-w-0">
+                <h3 className="font-primary text-sm font-bold text-slate-800 dark:text-white">
+                  {user?.name || "User"}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-primary">ចែករំលែកជាមួយសហគមន៍ LibreShelf</p>
+              </div>
             </div>
-          </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
             <textarea
               value={composer.content}
               onChange={(e) => onContentChange(e.target.value)}
-              rows={6}
-              placeholder="What's on your mind?"
-              className="w-full resize-none rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/5 px-4 py-3 text-sm text-slate-800 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-orange-500/50 focus:dark:bg-[#161c2c]"
+              rows={5}
+              placeholder="សរសេរអ្វីដែលអ្នកចង់ចែករំលែក..."
+              className="w-full resize-y min-h-[110px] rounded-2xl border border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-white/5 px-4 py-3 text-sm text-slate-800 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-secondary/50 focus:dark:bg-[#161c2c] font-primary"
             />
 
             {imagePreview && (
-              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/8 max-h-[200px]">
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+              <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/8 max-h-[300px] bg-slate-100 dark:bg-black/30">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover max-h-[300px]" />
+                <button
+                  type="button"
+                  onClick={onRemoveImage}
+                  className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition"
+                  title="Remove image"
+                >
+                  <i className="fa-solid fa-xmark text-xs" />
+                </button>
               </div>
             )}
 
-            {error && <div className="rounded-xl bg-red-50 p-3 text-xs text-red-500 dark:bg-red-950/30 dark:text-red-400">{error}</div>}
-            {success && <div className="rounded-xl bg-green-50 p-3 text-xs text-green-600 dark:bg-green-950/30 dark:text-green-400">{success}</div>}
+            {error && <div className="rounded-xl bg-red-50 p-3 text-xs text-red-500 dark:bg-red-950/30 dark:text-red-400 font-primary">{error}</div>}
+            {success && <div className="rounded-xl bg-green-50 p-3 text-xs text-green-600 dark:bg-green-950/30 dark:text-green-400 font-primary">{success}</div>}
+          </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-white/8 pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} className="hidden" />
+          {/* Sticky Actions Footer */}
+          <div className="shrink-0 border-t border-slate-100 dark:border-white/8 bg-white dark:bg-[#11151f] px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} className="hidden" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-white transition hover:bg-slate-200 dark:hover:bg-white/10 cursor-pointer font-primary"
+              >
+                <i className="fa-regular fa-image text-emerald-500" /> រូបភាព
+              </button>
+              {composer.image && (
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-white/5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-white transition hover:bg-slate-200"
+                  onClick={onRemoveImage}
+                  className="inline-flex items-center gap-2 rounded-full bg-red-50 dark:bg-red-950/20 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-100 cursor-pointer font-primary"
                 >
-                  <i className="fa-regular fa-image text-orange-500 dark:text-orange-400" /> Photo
+                  លុបរូបភាព
                 </button>
-                {composer.image && (
-                  <button
-                    type="button"
-                    onClick={onRemoveImage}
-                    className="inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-xs font-semibold text-red-500 transition"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
+              )}
+            </div>
 
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-slate-200 dark:border-white/10 px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition cursor-pointer font-primary"
+              >
+                បោះបង់
+              </button>
               <button
                 type="submit"
                 disabled={submittingPost}
-                className="rounded-full bg-secondary px-6 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                className="rounded-full bg-secondary px-6 py-2 text-xs sm:text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50 cursor-pointer font-primary"
               >
-                {mode === "edit" ? "Save changes" : "Post"}
+                {submittingPost ? "កំពុងរក្សាទុក..." : mode === "edit" ? "រក្សាទុកការកែប្រែ" : "បង្ហោះ"}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );

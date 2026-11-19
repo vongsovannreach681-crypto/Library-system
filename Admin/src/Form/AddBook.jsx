@@ -27,6 +27,23 @@ const AddBook = ({
   const isEditMode = Boolean(initialData?.id);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        resetForm();
+        onClose?.();
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await api.get("/get-all-categories");
@@ -139,9 +156,10 @@ const AddBook = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-xs overflow-y-auto overscroll-contain">
+      <div className="fixed inset-0" onClick={() => { resetForm(); onClose?.(); }} />
+      <div className="relative z-10 my-auto flex w-full max-w-3xl max-h-[90vh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-6 pb-4">
           <div>
             <h2 className="text-2xl font-semibold text-primary font-primary">
               {isEditMode ? "កែប្រែសៀវភៅ" : "បន្ថែមសៀវភៅថ្មី"}
@@ -158,13 +176,14 @@ const AddBook = ({
               resetForm();
               onClose?.();
             }}
-            className="rounded-full bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 cursor-pointer font-extrabold"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm text-gray-700 hover:bg-gray-200 cursor-pointer font-bold transition"
           >
-            x
+            ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium text-primary font-primary text-gray-700">
@@ -347,15 +366,25 @@ const AddBook = ({
           {errors.general && (
             <p className="text-sm text-red-600">{errors.general}</p>
           )}
+          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-           
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 p-5 px-6">
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                onClose?.();
+              }}
+              className="rounded-2xl border border-gray-300 bg-white px-5 py-2.5 font-primary text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition"
+            >
+              បោះបង់
+            </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-2xl bg-primary px-5 font-primary py-3 text-sm font-medium text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-2xl bg-primary px-6 py-2.5 font-primary text-sm font-medium text-white transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
             >
-              {submitting ? "កំពុងបន្ថែម..." : "បន្ថែមសៀវភៅ"}
+              {submitting ? "កំពុងរក្សាទុក..." : isEditMode ? "កែប្រែសៀវភៅ" : "បន្ថែមសៀវភៅ"}
             </button>
           </div>
         </form>

@@ -65,6 +65,18 @@ const BookSubmissionPanel = () => {
     [],
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === "Escape") closeModal(); };
+    document.addEventListener("keydown", handleKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   const closeModal = () => {
     setIsOpen(false);
     setError("");
@@ -171,9 +183,12 @@ const BookSubmissionPanel = () => {
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.2)] dark:border-white/10 dark:bg-[#0b1020]">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto overscroll-contain">
+          {/* Backdrop click handler */}
+          <div className="fixed inset-0" onClick={closeModal} />
+
+          <div className="relative z-10 my-auto flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.2)] dark:border-white/10 dark:bg-[#0b1020]">
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-secondary dark:text-slate-400">
                   Submit a book
@@ -185,7 +200,7 @@ const BookSubmissionPanel = () => {
               <button
                 type="button"
                 onClick={closeModal}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 cursor-pointer"
                 aria-label="Close book form"
               >
                 <i className="fa-solid fa-xmark" />
@@ -194,9 +209,10 @@ const BookSubmissionPanel = () => {
 
             <form
               onSubmit={handleSubmit}
-              className="grid max-h-[calc(92vh-72px)] gap-0 lg:grid-cols-[1.1fr_0.9fr]"
+              className="flex flex-1 flex-col overflow-y-auto overscroll-contain lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:overflow-hidden max-h-[calc(92vh-76px)]"
+              style={{ WebkitOverflowScrolling: "touch" }}
             >
-              <div className="space-y-4 overflow-y-auto px-5 py-5 lg:px-6">
+              <div className="space-y-4 px-5 py-5 lg:px-6 lg:overflow-y-auto lg:overscroll-contain lg:max-h-[calc(92vh-76px)]" style={{ WebkitOverflowScrolling: "touch" }}>
                 <FieldShell label="Book title">
                   <input
                     type="text"
@@ -257,7 +273,10 @@ const BookSubmissionPanel = () => {
                 </FieldShell>
               </div>
 
-              <div className="space-y-4 border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-white/10 dark:bg-white/5 lg:border-l lg:border-t-0 lg:px-6">
+              <div
+                className="space-y-4 border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-white/10 dark:bg-white/5 lg:border-l lg:border-t-0 lg:px-6 lg:overflow-y-auto lg:overscroll-contain lg:max-h-[calc(92vh-76px)]"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                   <FieldShell label="Time spent" hint="Optional">
                     <input

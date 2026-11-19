@@ -365,7 +365,8 @@ const AIChatWidget = ({ compact = false, onClose = null, onNavigateFull = null }
       {/* Messages area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-background/50 dark:bg-[#060911] p-4 space-y-4"
+        className="flex-1 overflow-y-auto overscroll-contain bg-background/50 dark:bg-[#060911] p-4 space-y-4"
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
         {messages.map((msg) => {
           const isUser = msg.role === "user";

@@ -136,6 +136,18 @@ const Header = () => {
     setIsMenuOpen((current) => !current);
   };
 
+  useEffect(() => {
+    if (!isFavoritesOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKey = (e) => { if (e.key === "Escape") closeFavorites(); };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [isFavoritesOpen]);
+
   const closeFavorites = () => {
     setIsFavoritesOpen(false);
     setFavoritesQuery("");
@@ -449,7 +461,7 @@ const Header = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4" style={{ WebkitOverflowScrolling: "touch" }}>
               {favoritesLoading ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center font-primary text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                   កំពុងផ្ទុកសៀវភៅចូលចិត្ត...
