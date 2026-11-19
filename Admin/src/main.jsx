@@ -1,10 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import ReactDOM from "react-dom/client";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import "./index.css";
-import App from "./App.jsx";
-import Test from "./components/Test.jsx";
 import ManageBookPage from "./pages/ManageBookPage.jsx";
 import ManageCategory from "./pages/ManageCategory.jsx";
 import LogToAdmin from "./Form/LogToAdmin.jsx";
@@ -13,12 +10,31 @@ import ManageUser from "./pages/ManageUser.jsx";
 import AdminPanel from "./pages/AdminPanel.jsx";
 
 const router = createBrowserRouter([
-
   {
     path: "/login",
+    element: <LogToAdmin />,
+  },
+  {
+    path: "/",
     element: (
       <ProtectedRoute>
-        <App />
+        <AdminPanel />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <AdminPanel />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/adminPanel",
+    element: (
+      <ProtectedRoute>
+        <AdminPanel />
       </ProtectedRoute>
     ),
   },
@@ -42,25 +58,13 @@ const router = createBrowserRouter([
     path: "/user",
     element: (
       <ProtectedRoute>
-        <ManageUser/>
+        <ManageUser />
       </ProtectedRoute>
     ),
-  },
-  {
-    path: "/adminPanel",
-    element: (
-      <ProtectedRoute>
-        <AdminPanel/>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/login",
-    element: <LogToAdmin />,
   },
   {
     path: "*",
-    element: <LogToAdmin />,
+    element: <Navigate to="/dashboard" replace />,
   },
 ]);
 

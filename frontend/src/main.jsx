@@ -1,6 +1,6 @@
 import "./index.css";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import RootLayout from "./components/RootLayout";
 import App from "./App";
 import DetailPage from "./pages/DetailPage";
@@ -11,6 +11,7 @@ import Register from "./auth/Register";
 import UserProfile from "./pages/UserProfile";
 import FavoritesPage from "./pages/FavoritesPage";
 import BlogPostDetail from "./pages/BlogPost/BlogPostDetail";
+import AIChatPage from "./pages/AIChatPage";
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,14 @@ const router = createBrowserRouter([
         element: <TrendingCard />,
       },
       {
+        path: "/chat",
+        element: <AIChatPage />,
+      },
+      {
+        path: "/ai-chat",
+        element: <AIChatPage />,
+      },
+      {
         path: "/login",
         element: <Login />,
       },
@@ -51,6 +60,14 @@ const router = createBrowserRouter([
       {
         path: "/favorites",
         element: <FavoritesPage />,
+      },
+      {
+        path: "/about",
+        element: <App />,
+      },
+      {
+        path: "*",
+        element: <Navigate to="/" replace />,
       },
     ],
   },
