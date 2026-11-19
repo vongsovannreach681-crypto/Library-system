@@ -157,12 +157,20 @@ const PostDetailModal = ({
   const mediaSrc = post.image_url || post.image || null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Modal */}
-      <div className="relative z-10 my-auto flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+      {/* Modal Centering Wrapper */}
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-2xl my-auto flex flex-col max-h-[90vh] overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.4)] text-left transform transition-all"
+        >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -302,6 +310,7 @@ const PostDetailModal = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };
 
@@ -605,12 +614,20 @@ const ComposerModal = ({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/70 p-4 sm:p-6 backdrop-blur-sm overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      {/* Modal */}
-      <div className="relative z-10 my-auto flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+      {/* Modal Centering Wrapper */}
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-2xl my-auto flex flex-col max-h-[90vh] overflow-hidden rounded-[28px] border border-slate-200 dark:border-white/8 bg-white dark:bg-[#11151f] shadow-[0_24px_80px_rgba(0,0,0,0.5)] text-left transform transition-all"
+        >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/8 px-5 py-4 shrink-0">
           <div>
@@ -711,6 +728,7 @@ const ComposerModal = ({
         </form>
       </div>
     </div>
+  </div>
   );
 };
 

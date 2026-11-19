@@ -156,9 +156,17 @@ const AddBook = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6 backdrop-blur-xs overflow-y-auto overscroll-contain">
-      <div className="fixed inset-0" onClick={() => { resetForm(); onClose?.(); }} />
-      <div className="relative z-10 my-auto flex w-full max-w-3xl max-h-[90vh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        onClick={() => { resetForm(); onClose?.(); }}
+        aria-hidden="true"
+      />
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-3xl my-auto flex flex-col max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl text-left transform transition-all"
+        >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-6 pb-4">
           <div>
             <h2 className="text-2xl font-semibold text-primary font-primary">
@@ -390,6 +398,7 @@ const AddBook = ({
         </form>
       </div>
     </div>
+  </div>
   );
 };
 
